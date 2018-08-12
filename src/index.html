@@ -1,0 +1,56 @@
+<html>
+<title>Jaxcore Virtual Spin Device</title>
+
+<head>
+    <script src="bundle.js" type="text/javascript"></script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ccc;
+        }
+
+        #canvas {
+            position: absolute;
+            margin: 0;
+            border: 1px solid #888;
+            border-radius: 10px;
+        }
+
+        #leds {
+            display: block;
+            height: 20px;
+        }
+
+        .led {
+            display: inline-block;
+            border: 1px solid black;
+            width: 20px;
+            height: 20px;
+            margin-right: 1px;
+        }
+    </style>
+</head>
+
+<body>
+    
+    <div id="buttons">
+        <button onmousedown="startSpinLeft()" onmouseup="stopSpinLeft()">+&lt;</button>
+        <button onmousedown="rotateLeft()">&lt;</button>
+        <button onmousedown="rotateRight()">&gt;</button>
+        <button onmousedown="startSpinRight()" onmouseup="stopSpinRight()">&gt;+</button>
+
+        <button onmousedown="pushKnob()" onmouseup="releaseKnob()">Push Knob</button>
+        <button onmousedown="pushButton()" onmouseup="releaseButton()">Push Button</button>
+        <button id="holdknob" onclick="toggleHoldKnob()">Hold Knob</button>
+        <button id="holdbutton" onclick="toggleHoldButton()">Hold Button</button>
+        <div id="leds"></div>
+    </div>
+
+    <div id="canvas">
+    </div>
+
+</body>
+
+</html>
