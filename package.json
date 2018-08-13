@@ -4,8 +4,7 @@
   "description": "a software web simulation of a Jaxcore Spin",
 	"author": "Dan Steinman",
   "dependencies": {
-    "matter-js": "^0.14.2",
-    "npm": "^6.2.0"
+    "matter-js": "^0.14.2"
   },
   "scripts": {
     "start": "webpack --mode development --watch",
