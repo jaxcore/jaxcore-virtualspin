@@ -32,7 +32,13 @@ Then visit [http://localhost:8000](http://localhost:8000) to see the Matter.js v
 
 **Node Module**
 
-The library can be imported into other projects and use like this:
+The library can be imported into other projects:
+
+```
+npm install jaxcore-virtualspin --save
+```
+
+Capture spin, button, and knob events:
 
 ```
 import VirtualSpin from 'jaxcore-virtualspin';
