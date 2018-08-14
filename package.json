@@ -2,7 +2,7 @@
   "name": "jaxcore-virtualspin",
   "version": "0.0.1",
   "description": "a software web simulation of a Jaxcore Spin",
-	"author": "Dan Steinman",
+  "author": "Dan Steinman",
   "dependencies": {
     "matter-js": "^0.14.2"
   },
@@ -14,5 +14,11 @@
   "devDependencies": {
     "webpack": "^4.16.1",
     "webpack-cli": "^3.1.0"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jaxcore/jaxcore-virtualspin"
+  },
+  "homepage": "https://jaxcore.com"
 }
