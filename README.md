@@ -64,6 +64,6 @@ vspin.on('rotate', function(angle) {
     console.log('angle = '+angle);
 });
 
-vspin.start();
+vspin.startSimulation();
 
 ```
