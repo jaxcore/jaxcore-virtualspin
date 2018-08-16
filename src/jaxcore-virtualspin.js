@@ -182,8 +182,8 @@ VirtualSpin.prototype.stop = function () {
 };
 
 VirtualSpin.prototype.startSpinLeft = function () {
-    console.log('startSpinLeft');
     if (this.isSpinningLeft) return;
+	this.stop();
     this.isSpinningLeft = true;
     this.leftTorqueAccel = this.torqueStart;
     clearTimeout(this.spinLeftTimer);
@@ -200,7 +200,8 @@ VirtualSpin.prototype.stopSpinLeft = function () {
 };
 
 VirtualSpin.prototype.startSpinRight = function () {
-    if (this.isSpinningRight) return;
+	if (this.isSpinningRight) return;
+	this.stop();
     this.isSpinningRight = true;
     this.rightTorqueAccel = this.torqueStart;
     clearTimeout(this.spinRightTimer);
@@ -230,6 +231,7 @@ VirtualSpin.prototype.rotateLeft = function () {
     this.setPosition(this.spinPosition - 1);
 };
 VirtualSpin.prototype.startRotateLeft = function () {
+	this.stopRotateLeft();
     this.rotateLeft();
     var me = this;
     this.rotateDelay = setTimeout(function() {
@@ -237,8 +239,8 @@ VirtualSpin.prototype.startRotateLeft = function () {
     },500);
 };
 VirtualSpin.prototype.stopRotateRight = VirtualSpin.prototype.stopRotateLeft = function () {
-    clearInterval(this.rotateDelay);
-    clearInterval(this.rotateInterval);
+	clearTimeout(this.rotateDelay);
+	clearInterval(this.rotateInterval);
 };
 
 VirtualSpin.prototype.rotateRight = function () {
@@ -246,6 +248,7 @@ VirtualSpin.prototype.rotateRight = function () {
     this.setPosition(this.spinPosition + 1);
 };
 VirtualSpin.prototype.startRotateRight = function () {
+    this.stopRotateRight();
     this.rotateRight();
     var me = this;
     this.rotateDelay = setTimeout(function() {
