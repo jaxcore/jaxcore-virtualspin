@@ -99,13 +99,15 @@ VirtualSpin.prototype.createWorld = function () {
 
 VirtualSpin.prototype.updateLeds = function () {
     var color;
-    this.ledElms.forEach(function (elm, i) {
-        r = this.ledColors[i][0];
-        g = this.ledColors[i][1];
-        b = this.ledColors[i][2];
-        color = 'rgb(' + r + ',' + g + ',' + b + ')';
-        elm.style.backgroundColor = color;
-    }, this);
+    if (this.ledElms) {
+        this.ledElms.forEach(function (elm, i) {
+            r = this.ledColors[i][0];
+            g = this.ledColors[i][1];
+            b = this.ledColors[i][2];
+            color = 'rgb(' + r + ',' + g + ',' + b + ')';
+            elm.style.backgroundColor = color;
+        }, this);
+    }
     this.emit('leds-changed', this.ledColors);
 }
 
