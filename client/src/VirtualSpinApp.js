@@ -97,7 +97,7 @@ class VirtualSpinApp extends Component {
 		
 		// let inverseColor = this.spininversecolors[s];
 		virtualspin.on('spin', (direction, position) => {
-			console.log('on spin position = ' + position + ' direction = ' + direction + ' angle = ' + virtualspin.angle);
+			//console.log('on spin position = ' + position + ' direction = ' + direction + ' angle = ' + virtualspin.angle);
 			var color;
 			if (virtualspin.knobPushed) color = virtualspin.color; //[255, 0, 255];
 			else if (virtualspin.buttonPushed) color = virtualspin.inverseColor; ///[255, 255];
@@ -134,6 +134,11 @@ class VirtualSpinApp extends Component {
 		this.virtualspins[s] = virtualspin;
 		
 		virtualspin.startSimulation();
+		
+		let _s = s;
+		virtualspin.on('update', (changes) => {
+			console.log('update', _s, virtualspin.state, changes);
+		});
 		
 		return virtualspin;
 	}
@@ -174,15 +179,20 @@ class VirtualSpinApp extends Component {
 						
 						<button disabled={this.virtualspins[s].state.knobHold}
 								onMouseDown={e => this.virtualspins[s].pushKnob()}
-								onMouseUp={e => this.virtualspins[s].releaseKnob()}>Push Knob
+								onMouseUp={e => this.virtualspins[s].releaseKnob()}>
+							Knob
 						</button>
 						
 						<button disabled={this.virtualspins[s].state.buttonHold}
 								onMouseDown={e => this.virtualspins[s].pushButton()}
-								onMouseUp={e => this.virtualspins[s].releaseButton()}>Push Button
+								onMouseUp={e => this.virtualspins[s].releaseButton()}>
+							Button
 						</button>
-						<button id="holdknob" onClick={e => this.virtualspins[s].toggleHoldKnob()}>Hold Knob</button>
-						<button id="holdbutton" onClick={e => this.virtualspins[s].toggleHoldButton()}>Hold Button
+						<button id="holdknob" onClick={e => this.virtualspins[s].toggleHoldKnob()}>
+							{this.virtualspins[s].state.knobHold? 'Release':'Hold'} Knob
+						</button>
+						<button id="holdbutton" onClick={e => this.virtualspins[s].toggleHoldButton()}>
+							{this.virtualspins[s].state.knobHold? 'Release':'Hold'} Button
 						</button>
 						<div id="leds">
 							{this.renderLeds(s)}
