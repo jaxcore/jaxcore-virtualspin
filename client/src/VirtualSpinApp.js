@@ -14,7 +14,7 @@ class VirtualSpinApp extends Component {
 		this.virtualspins = [];
 		
 		this.state = {
-			numberSpins: 2
+			numberSpins: 1
 		};
 		
 		global.app = this;
@@ -40,19 +40,25 @@ class VirtualSpinApp extends Component {
 		let startColor = new Color(255,0,0);
 		let spincolors = [];
 		let h;
-		for (let s = 0; s < this.state.numberSpins; s++) {
-			if (s===0) {
-				spincolors[s] = startColor;
+		if (this.state.numberSpins === 1) {
+			spincolors[0] = new Color(255,255,255);
+			this.virtualspins[0].setColor(spincolors[0]);
+		}
+		else {
+			for (let s = 0; s < this.state.numberSpins; s++) {
+				if (s===0) {
+					spincolors[s] = startColor;
+				}
+				else {
+					h = 1 / this.state.numberSpins;
+					spincolors[s] = spincolors[s-1].shiftHue(h);
+				}
+				
+				this.virtualspins[s].setColor(spincolors[s]);
+				
+				// for button flash
+				this.virtualspins[s].inverseColor = spincolors[s].invert();
 			}
-			else {
-				h = 1 / this.state.numberSpins;
-				spincolors[s] = spincolors[s-1].shiftHue(h);
-			}
-			
-			this.virtualspins[s].setColor(spincolors[s]);
-			
-			// for button flash
-			this.virtualspins[s].inverseColor = spincolors[s].invert();
 		}
 		
 		//this.spincolors = spincolors;
@@ -152,30 +158,38 @@ class VirtualSpinApp extends Component {
 		if (!this.state.numberSpins) return;
 		let r = [];
 		for (let s = 0; s < this.state.numberSpins; s++) {
-			r.push((
-				<div key={s} className="buttons">
-					{s+1}:
-					<button onMouseDown={e => this.virtualspins[s].startSpinLeft()}
-							onMouseUp={e => this.virtualspins[s].stopSpinLeft()}>+&lt;</button>
-					<button onMouseDown={e => this.virtualspins[s].rotateLeft()}>&lt;</button>
-					<button onMouseDown={e => this.virtualspins[s].rotateRight()}>&gt;</button>
-					<button onMouseDown={e => this.virtualspins[s].startSpinRight()}
-							onMouseUp={e => this.virtualspins[s].stopSpinRight()}>&gt;+
-					</button>
-					<button disabled={this.virtualspins[s]} onMouseDown={e => this.virtualspins[s].pushKnob()}
-							onMouseUp={e => this.virtualspins[s].releaseKnob()}>Push Knob
-					</button>
-					
-					<button onMouseDown={e => this.virtualspins[s].pushButton()}
-							onMouseUp={e => this.virtualspins[s].releaseButton()}>Push Button
-					</button>
-					<button id="holdknob" onClick={e => this.virtualspins[s].toggleHoldKnob()}>Hold Knob</button>
-					<button id="holdbutton" onClick={e => this.virtualspins[s].toggleHoldButton()}>Hold Button</button>
-					<div id="leds">
-						{this.renderLeds(s)}
+			if (this.virtualspins[s]) {
+				r.push((
+					<div key={s} className="buttons">
+						{s + 1}:
+						<button onMouseDown={e => this.virtualspins[s].spinLeftMax()}>&lt;&lt;</button>
+						<button onMouseDown={e => this.virtualspins[s].startSpinLeft()}
+								onMouseUp={e => this.virtualspins[s].stopSpinLeft()}>+&lt;</button>
+						<button onMouseDown={e => this.virtualspins[s].rotateLeft()}>&lt;</button>
+						<button onMouseDown={e => this.virtualspins[s].rotateRight()}>&gt;</button>
+						<button onMouseDown={e => this.virtualspins[s].startSpinRight()}
+								onMouseUp={e => this.virtualspins[s].stopSpinRight()}>&gt;+
+						</button>
+						<button onMouseDown={e => this.virtualspins[s].spinRightMax()}>+&gt;&gt;</button>
+						
+						<button disabled={this.virtualspins[s].state.knobHold}
+								onMouseDown={e => this.virtualspins[s].pushKnob()}
+								onMouseUp={e => this.virtualspins[s].releaseKnob()}>Push Knob
+						</button>
+						
+						<button disabled={this.virtualspins[s].state.buttonHold}
+								onMouseDown={e => this.virtualspins[s].pushButton()}
+								onMouseUp={e => this.virtualspins[s].releaseButton()}>Push Button
+						</button>
+						<button id="holdknob" onClick={e => this.virtualspins[s].toggleHoldKnob()}>Hold Knob</button>
+						<button id="holdbutton" onClick={e => this.virtualspins[s].toggleHoldButton()}>Hold Button
+						</button>
+						<div id="leds">
+							{this.renderLeds(s)}
+						</div>
 					</div>
-				</div>
-			));
+				));
+			}
 		}
 		return r;
 	}

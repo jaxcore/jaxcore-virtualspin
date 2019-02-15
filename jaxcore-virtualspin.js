@@ -41,30 +41,44 @@ function VirtualSpin(config) {
         this.ledColors[i] = [0, 0, 0];
     }
     
-    this.rotationIndex = 0;
-    this.spinPosition = 0;
-    this.buttonPushed = false;
-    this.knobPushed = false;
-    this.knobHeld = false;
-    this.buttonHeld = false;
+    this.state = {
+        rotationIndex: 0,
+        spinPosition: 0,
+        buttonPushed: false,
+        knobPushed: false,
+        knobHold: false,
+        buttonHold: false,
+        isSpinning: false,
+        isSpinningLeft: false,
+        isSpinningRight: false,
+        isResting: false,
+        angularVelocity: 0,
+        torqueStart: config.torqueStart || 0,
+        leftTorqueAccel: config.torqueStart || 0,
+        rightTorqueAccel: config.torqueStart || 0,
+        torqueAccel: (config.torqueAccel || Math.PI / 8000),
+        torqueMax: (config.torqueMax || 100),
+        torqueInterval: (config.torqueMax || 20),
+        friction: (config.friction || 0.05),
+        updateInterval: (config.updateInterval || 10)
+    };
     
-    this.isSpinningLeft = false;
-    this.isSpinningRight = false;
-    this.isSlowSpinningLeft = false;
-    this.isSlowSpinningRight = false;
+    // this.state.rotationIndex = 0;
+    // this.state.spinPosition = 0;
+    // this.state.buttonPushed = false;
+    // this.state.knobPushed = false;
+    // this.state.knobHold = false;
+    // this.state.buttonHold = false;
+    // this.state.isSpinning = false;
+    // this.state.isSpinningLeft = false;
+    // this.state.isSpinningRight = false;
+    // this.state.isResting = false;
+    // this.state.angularVelocity = 0;
     
     this.spinLeftTimer = null;
     this.spinRightTimer = null;
-    this.torqueStart = config.torqueStart || 0;
-    this.leftTorqueAccel = this.torqueStart;
-    this.rightTorqueAccel = this.torqueStart;
-    this.torqueAccel = (config.torqueAccel || Math.PI / 8000) * this.scale;
-    this.torqueMax = (config.torqueMax || 100 * this.scale);
-    this.torqueInterval = (config.torqueMax || 20);
-    this.friction = (config.friction || 0.05);
-    
-    
-    //if (!this.createWorld();
+    this.rotateDelay = null;
+    this.rotateInterval = null;
     
     this.createShape();
 }
@@ -116,7 +130,7 @@ VirtualSpin.prototype.setColor = function (color) {
 VirtualSpin.prototype.createShape = function () {
     var shape = 'polygon';
     this.knob = Bodies[shape](this.x, this.y, 3, this.size, {
-        frictionAir: this.friction,
+        frictionAir: this.state.friction,
         render: {
             fillStyle: 'transparent',
             strokeStyle: this.color,
@@ -127,7 +141,7 @@ VirtualSpin.prototype.createShape = function () {
     });
     
     // this.knob = Bodies.rectangle(100, 100, 50, 50, {
-    //     frictionAir: this.friction,
+    //     frictionAir: this.state.friction,
     //     // background: "#F00"
     //     background: "red",
     //     wireframeBackground: 'red'
@@ -186,12 +200,12 @@ VirtualSpin.prototype.startLedTimer = function () {
 
 VirtualSpin.prototype.rotateLeds = function (direction, color1, color2) {
     clearTimeout(this.ledTimeout);
-    this.rotationIndex += direction;
-    if (this.rotationIndex > 23) this.rotationIndex = 0;
-    else if (this.rotationIndex < 0) this.rotationIndex = 23;
+    this.state.rotationIndex += direction;
+    if (this.state.rotationIndex > 23) this.state.rotationIndex = 0;
+    else if (this.state.rotationIndex < 0) this.state.rotationIndex = 23;
 
     for (var i = 0; i < 24; i++) {
-        this.ledColors[i] = i === this.rotationIndex ? color1 : [0, 0, 0];
+        this.ledColors[i] = i === this.state.rotationIndex ? color1 : [0, 0, 0];
     }
     this.updateLeds();
     this.startLedTimer();
@@ -209,54 +223,66 @@ VirtualSpin.prototype.applyTorque = function (torque) {
     this.setTorque(this.knob.torque + torque * this.scale);
 };
 VirtualSpin.prototype.setTorque = function (torque) {
-    if (torque > this.torqueMax) {
-        torque = this.torqueMax;
+    if (torque > this.state.torqueMax) {
+        torque = this.state.torqueMax;
     }
-    if (torque < -this.torqueMax) {
-        torque = -this.torqueMax;
+    if (torque < -this.state.torqueMax) {
+        torque = -this.state.torqueMax;
     }
     this.knob.torque = torque;
 };
 
 VirtualSpin.prototype.stop = function () {
-    this.leftTorqueAccel = this.torqueStart;
-    this.rightTorqueAccel = this.torqueStart;
+    this.state.leftTorqueAccel = this.state.torqueStart;
+    this.state.rightTorqueAccel = this.state.torqueStart;
     this.knob.torque = 0;
     Body.setAngularVelocity(this.knob, 0);
 };
 
+
+VirtualSpin.prototype.spinLeftMax = function () {
+    console.log('spinLeftMax');
+    this.applyTorque(-this.state.torqueMax);
+};
+VirtualSpin.prototype.spinRightMax = function () {
+    console.log('spinRightMax');
+    this.applyTorque(this.state.torqueMax);
+};
+
+
 VirtualSpin.prototype.startSpinLeft = function () {
-    if (this.isSpinningLeft) return;
+    // if (this.state.isSpinningLeft) return;
 	this.stop();
-    this.isSpinningLeft = true;
-    this.leftTorqueAccel = this.torqueStart;
+    // this.state.isSpinningLeft = true;
+    this.state.leftTorqueAccel = this.state.torqueStart;
     clearTimeout(this.spinLeftTimer);
     var me = this;
     this.spinLeftTimer = startInterval(function() {
-        me.leftTorqueAccel += me.torqueAccel;
-        me.applyTorque(-me.leftTorqueAccel);
-    }, this.torqueInterval);
-}
+        me.state.leftTorqueAccel += me.state.torqueAccel;
+        me.applyTorque(-me.state.leftTorqueAccel);
+    }, this.state.torqueInterval);
+};
 
 VirtualSpin.prototype.stopSpinLeft = function () {
-    this.isSpinningLeft = false;
+    // this.state.isSpinningLeft = false;
     clearTimeout(this.spinLeftTimer);
 };
 
 VirtualSpin.prototype.startSpinRight = function () {
-	if (this.isSpinningRight) return;
+	// if (this.state.isSpinningRight) return;
 	this.stop();
-    this.isSpinningRight = true;
-    this.rightTorqueAccel = this.torqueStart;
+    // this.state.isSpinningRight = true;
+    this.state.rightTorqueAccel = this.state.torqueStart;
     clearTimeout(this.spinRightTimer);
-    this.spinRightTimer = startInterval((function() {
-        this.rightTorqueAccel += this.torqueAccel;
-        this.applyTorque(this.rightTorqueAccel);
-    }).bind(this), this.torqueInterval);
+    var me = this;
+    this.spinRightTimer = startInterval(function() {
+        me.state.rightTorqueAccel += me.state.torqueAccel;
+        me.applyTorque(me.state.rightTorqueAccel);
+    }, this.state.torqueInterval);
 };
 
 VirtualSpin.prototype.stopSpinRight = function () {
-    this.isSpinningRight = false;
+    // this.state.isSpinningRight = false;
     clearTimeout(this.spinRightTimer);
 };
 
@@ -272,7 +298,7 @@ VirtualSpin.prototype.setPosition = function (position) {
 
 VirtualSpin.prototype.rotateLeft = function () {
     this.stop();
-    this.setPosition(this.spinPosition - 1);
+    this.setPosition(this.state.spinPosition - 1);
 };
 VirtualSpin.prototype.startRotateLeft = function () {
 	this.stopRotateLeft();
@@ -289,7 +315,7 @@ VirtualSpin.prototype.stopRotateRight = VirtualSpin.prototype.stopRotateLeft = f
 
 VirtualSpin.prototype.rotateRight = function () {
     this.stop();
-    this.setPosition(this.spinPosition + 1);
+    this.setPosition(this.state.spinPosition + 1);
 };
 VirtualSpin.prototype.startRotateRight = function () {
     this.stopRotateRight();
@@ -306,7 +332,7 @@ VirtualSpin.prototype.startSimulation = function () {
     var me = this;
     this.updateInterval = setInterval(function () {
         me.update();
-    }, 10);
+    }, this.state.updateInterval);
 }
 
 VirtualSpin.prototype.emit = function () {
@@ -318,20 +344,22 @@ VirtualSpin.prototype.on = function () {
 
 VirtualSpin.prototype.update = function () {
     var position = this.getPosition();
-    if (this.spinPosition != position) {
-        var direction = position - this.spinPosition > 0 ? 1 : -1;
-        this.spinPosition = position;
+    
+    if (this.state.spinPosition !== position) {
+        var direction = position - this.state.spinPosition > 0 ? 1 : -1;
+        this.state.spinPosition = position;
         this.emit('spin', direction, position);
         console.log('emit spin', position);
     }
 
+    // round angle down to 4 decimal places because in matterjs it never actually reaches 0.0
     var roundedAngle = Math.round(this.knob.angle * 10000) / 10000;
 
-    if (this.angle != roundedAngle) {
-
-        this.angle = roundedAngle;
-        this.emit('rotate', this.knob.angle, this);
+    if (this.angle !== roundedAngle) {
+        this.state.angle = roundedAngle;
+        this.emit('rotate', this.state.angle, this);
     }
+    
 };
 
 VirtualSpin.prototype.stopSimulation = function () {
@@ -339,37 +367,37 @@ VirtualSpin.prototype.stopSimulation = function () {
 };
 
 VirtualSpin.prototype.pushKnob = function () {
-    if (this.knobHeld) return;
-    if (this.knobPushed) return;
+    if (this.state.knobHold) return;
+    if (this.state.knobPushed) return;
     this.stop();
-    this.knobPushed = true;
+    this.state.knobPushed = true;
     this.emit('knob-pushed');
     this.emit('knob', true);
 };
 VirtualSpin.prototype.releaseKnob = function () {
     this.stop();
-    if (!this.knobPushed) return;
-    this.knobPushed = false;
+    if (!this.state.knobPushed) return;
+    this.state.knobPushed = false;
     this.emit('knob-released');
     this.emit('knob', false);
 };
 VirtualSpin.prototype.pushButton = function () {
-    if (this.buttonHeld) return;
-    if (this.buttonPushed) return;
-    this.buttonPushed = true;
+    if (this.state.buttonHold) return;
+    if (this.state.buttonPushed) return;
+    this.state.buttonPushed = true;
     this.emit('button-pushed');
     this.emit('button', true);
 };
 VirtualSpin.prototype.releaseButton = function () {
-    if (!this.buttonPushed) return;
-    this.buttonPushed = false;
+    if (!this.state.buttonPushed) return;
+    this.state.buttonPushed = false;
     this.emit('button-released');
     this.emit('button', false);
 };
 
 VirtualSpin.prototype.toggleHoldKnob = function () {
-    this.knobHeld = !this.knobHeld;
-    if (this.knobHeld) {
+    this.state.knobHold = !this.state.knobHold;
+    if (this.state.knobHold) {
         this.pushKnob();
         console.log('knob-release');
         this.emit('knob-release');
@@ -382,8 +410,8 @@ VirtualSpin.prototype.toggleHoldKnob = function () {
 };
 
 VirtualSpin.prototype.toggleHoldButton = function () {
-    this.buttonHeld = !this.buttonHeld;
-    if (this.buttonHeld) {
+    this.state.buttonHold = !this.state.buttonHold;
+    if (this.state.buttonHold) {
         this.pushButton();
         console.log('button-release');
         this.emit('button-release');
