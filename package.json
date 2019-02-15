@@ -1,24 +1,29 @@
 {
   "name": "jaxcore-virtualspin",
-  "version": "0.0.2",
-  "description": "a software web simulation of a Jaxcore Spin",
-  "author": "Dan Steinman",
+  "version": "0.0.3",
+  "description": "Virtualized Multi-Dimensional Jaxcore Spin",
+  "main": "jaxcore-virtualspin.js",
   "dependencies": {
     "matter-js": "^0.14.2"
   },
+  "devDependencies": {},
   "scripts": {
-    "start": "webpack --mode development --watch",
-    "build": "webpack --mode production & cp src/index.html build/",
-    "test": ""
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "devDependencies": {
-    "webpack": "^4.16.1",
-    "webpack-cli": "^3.1.0"
-  },
-  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jaxcore/jaxcore-virtualspin"
+    "url": "git+https://github.com/jaxcore/jaxcore-virtualspin.git"
   },
-  "homepage": "https://jaxcore.com"
+  "keywords": [
+    "Jaxcore",
+    "Spin",
+    "Remote",
+    "Controls"
+  ],
+  "author": "Jaxcore",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jaxcore/jaxcore-virtualspin/issues"
+  },
+  "homepage": "https://github.com/jaxcore/jaxcore-virtualspin#readme"
 }

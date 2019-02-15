@@ -18,61 +18,76 @@ function VirtualSpin(config) {
     //this.constructor();
 
     this.events = new EventEmitter();
-
-    if (!config) config = {};
+    
     this.config = config;
-
+    // /this.canvasRef = config.canvasRef;
+    
+    this.engine = config.engine;
+    
+    this.defaultSize = 200;
+    this.defaultBodySize = 50;
+    this.worldWidth = config.width || 200;
+    this.worldHeight = config.height || 200;
+    this.scale = this.worldWidth / this.defaultSize;
+    this.x = this.scale * (config.x || 100);
+    this.y = this.scale * (config.y || 100);
+    this.size = this.scale * (this.defaultBodySize);
+   
+    this.color = config.color || 'white';
+    
+    this.ledRefs = [];
     this.ledColors = [];
-    for (var i = 0; i < 24; i++) {
+    for (let i = 0; i < 24; i++) {
         this.ledColors[i] = [0, 0, 0];
     }
-    if (config.ledElms) {
-        this.ledElms = config.ledElms;
-        this.updateLeds();
-    }
+    
     this.rotationIndex = 0;
-
     this.spinPosition = 0;
     this.buttonPushed = false;
     this.knobPushed = false;
-
+    this.knobHeld = false;
+    this.buttonHeld = false;
+    
+    this.isSpinningLeft = false;
+    this.isSpinningRight = false;
+    this.isSlowSpinningLeft = false;
+    this.isSlowSpinningRight = false;
+    
     this.spinLeftTimer = null;
     this.spinRightTimer = null;
     this.torqueStart = config.torqueStart || 0;
     this.leftTorqueAccel = this.torqueStart;
     this.rightTorqueAccel = this.torqueStart;
-    this.torqueAccel = config.torqueAccel || Math.PI / 8000;
-    this.isSpinningLeft = false;
-    this.isSpinningRight = false;
-    this.isSlowSpinningLeft = false;
-    this.isSlowSpinningRight = false;
-    this.torqueMax = config.torqueMax || 100;
-    this.torqueInterval = 20;
-    this.friction = config.friction || 0.05;
-
-    this.createWorld();
+    this.torqueAccel = (config.torqueAccel || Math.PI / 8000) * this.scale;
+    this.torqueMax = (config.torqueMax || 100 * this.scale);
+    this.torqueInterval = (config.torqueMax || 20);
+    this.friction = (config.friction || 0.05);
+    
+    
+    //if (!this.createWorld();
+    
+    this.createShape();
 }
+
 VirtualSpin.prototype = {}; //new EventEmitter;
 //VirtualSpin.prototype.constructor = EventEmitter;
 
-VirtualSpin.prototype.createWorld = function () {
-    if (this.engine) return;
+VirtualSpin.engine = null;
 
-    var engine = this.engine = Engine.create();
-    var world = engine.world;
-
+VirtualSpin.createWorld = function (canvasRef, worldWidth, worldHeight) {
+    var engine = Engine.create();
+    
     engine.world.gravity.y = 0;
-
-    this.worldWidth = 200;
-    this.worldHeight = 200;
-
-    var render = this.render = Render.create({
-        element: this.config.elm,
+    
+    var render = Render.create({
+        element: canvasRef.current,
         engine: engine,
         options: {
-            width: this.worldWidth,
-            height: this.worldHeight,
-            showVelocity: false
+            width: worldWidth,
+            height: worldHeight,
+            showVelocity: true,
+            wireframes: false, // Draw the shapes as solid colors
+            background: "#000"
         }
     });
 
@@ -80,32 +95,59 @@ VirtualSpin.prototype.createWorld = function () {
 
     var runner = Runner.create();
     Runner.run(runner, engine);
-
-    this.knob = Bodies.rectangle(100, 100, 50, 50, {
-        frictionAir: this.friction
+    
+    Render.lookAt(render, {
+        min: { x: 0, y: 0 },
+        max: { x: worldWidth, y: worldHeight }
     });
+    
+    return engine;
+};
 
-    World.add(world, [
+VirtualSpin.prototype.setLeds = function (ledRefs) {
+    this.ledRefs = ledRefs;
+    this.updateLeds();
+};
+
+VirtualSpin.prototype.setColor = function (color) {
+    this.color = color;
+    this.knob.render.strokeStyle = this.color.toString();
+};
+VirtualSpin.prototype.createShape = function () {
+    var shape = 'polygon';
+    this.knob = Bodies[shape](this.x, this.y, 3, this.size, {
+        frictionAir: this.friction,
+        render: {
+            fillStyle: 'transparent',
+            strokeStyle: this.color,
+            lineWidth: 4
+        }
+        // restitution: 0.1,
+        //background: "#F00"
+    });
+    
+    // this.knob = Bodies.rectangle(100, 100, 50, 50, {
+    //     frictionAir: this.friction,
+    //     // background: "#F00"
+    //     background: "red",
+    //     wireframeBackground: 'red'
+    // });
+    
+    World.add(this.engine.world, [
         this.knob
     ]);
 
-    Render.lookAt(render, {
-        min: { x: 0, y: 0 },
-        max: { x: this.worldWidth, y: this.worldHeight }
-    });
-
-    
 };
 
 VirtualSpin.prototype.updateLeds = function () {
     var color;
-    if (this.ledElms) {
-        this.ledElms.forEach(function (elm, i) {
+    if (this.ledRefs) {
+        this.ledRefs.forEach(function (ref, i) {
             r = this.ledColors[i][0];
             g = this.ledColors[i][1];
             b = this.ledColors[i][2];
             color = 'rgb(' + r + ',' + g + ',' + b + ')';
-            elm.style.backgroundColor = color;
+            if (ref.current) ref.current.style.backgroundColor = color;
         }, this);
     }
     this.emit('leds-changed', this.ledColors);
@@ -164,8 +206,8 @@ VirtualSpin.prototype.rotate = function (angle) {
 };
 
 VirtualSpin.prototype.applyTorque = function (torque) {
-    this.setTorque(this.knob.torque + torque);
-}
+    this.setTorque(this.knob.torque + torque * this.scale);
+};
 VirtualSpin.prototype.setTorque = function (torque) {
     if (torque > this.torqueMax) {
         torque = this.torqueMax;
@@ -258,7 +300,6 @@ VirtualSpin.prototype.startRotateRight = function () {
     },500);
 };
 
-
 VirtualSpin.prototype.startSimulation = function () {
     console.log('startSimulation!');
 
@@ -298,8 +339,9 @@ VirtualSpin.prototype.stopSimulation = function () {
 };
 
 VirtualSpin.prototype.pushKnob = function () {
-    this.stop();
+    if (this.knobHeld) return;
     if (this.knobPushed) return;
+    this.stop();
     this.knobPushed = true;
     this.emit('knob-pushed');
     this.emit('knob', true);
@@ -312,6 +354,7 @@ VirtualSpin.prototype.releaseKnob = function () {
     this.emit('knob', false);
 };
 VirtualSpin.prototype.pushButton = function () {
+    if (this.buttonHeld) return;
     if (this.buttonPushed) return;
     this.buttonPushed = true;
     this.emit('button-pushed');
@@ -323,5 +366,35 @@ VirtualSpin.prototype.releaseButton = function () {
     this.emit('button-released');
     this.emit('button', false);
 };
+
+VirtualSpin.prototype.toggleHoldKnob = function () {
+    this.knobHeld = !this.knobHeld;
+    if (this.knobHeld) {
+        this.pushKnob();
+        console.log('knob-release');
+        this.emit('knob-release');
+    }
+    else {
+        this.releaseKnob();
+        console.log('knob-hold');
+        this.emit('knob-hold');
+    }
+};
+
+VirtualSpin.prototype.toggleHoldButton = function () {
+    this.buttonHeld = !this.buttonHeld;
+    if (this.buttonHeld) {
+        this.pushButton();
+        console.log('button-release');
+        this.emit('button-release');
+    }
+    else {
+        this.releaseButton();
+        console.log('button-hold');
+        this.emit('button-hold');
+    }
+};
+
+VirtualSpin.World = World;
 
 module.exports = VirtualSpin;
