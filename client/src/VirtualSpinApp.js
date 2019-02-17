@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import Jaxcore from 'jaxcore-client';
 import VirtualSpin, {} from 'jaxcore-virtualspin';
 
 // import Color from 'jaxcore-color';
@@ -14,6 +15,7 @@ class VirtualSpinApp extends Component {
 		this.virtualspins = [];
 		
 		this.state = {
+			connectedExtension: false,
 			numberSpins: 1,
 			spinStates: {}
 		};
@@ -34,8 +36,35 @@ class VirtualSpinApp extends Component {
 		
 		this.updateColors();
 		
-		this.forceUpdate();
+		// this.forceUpdate();
+		
+		let jx = Jaxcore;
+		
+		
+		Jaxcore.subscribe((jaxcoreState) => {
+			const {state} = this;
+			state.connectedExtension = jaxcoreState.connectedExtension;
+			this.setState(state);
+		});
+		
+		debugger;
+		
+		Jaxcore.connectSpins(spin => {
+			console.log('spin connected', spin);
+			
+			spin.on('spin', (direction) => {
+				console.log('spin', direction, spin.state.spinPosition);
+			});
+			spin.on('button', (pushed) => {
+				console.log('x button', pushed);
+			});
+			spin.on('knob', (pushed) => {
+				console.log('knob', pushed);
+			});
+			
+		});
 	}
+	
 	
 	updateColors() {
 		let startColor = new Color(255,0,0);

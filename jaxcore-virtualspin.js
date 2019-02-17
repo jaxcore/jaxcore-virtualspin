@@ -55,8 +55,8 @@ class VirtualSpin extends ES6Client {
             spinPosition: 0,
             buttonPushed: false,
             knobPushed: false,
-            knobHold: false,
-            buttonHold: false,
+            knobHoldToggle: false,
+            buttonHoldToggle: false,
             isSpinning: false,
             isSpinningLeft: false,
             isSpinningRight: false,
@@ -69,7 +69,8 @@ class VirtualSpin extends ES6Client {
             torqueMax: (config.torqueMax || 100),
             torqueInterval: (config.torqueMax || 20),
             friction: (config.friction || 0.05),
-            updateInterval: (config.updateInterval || 10)
+            updateInterval: (config.updateInterval || 10),
+            idleTimeout: 400
         });
         
         this.spinLeftTimer = null;
@@ -91,10 +92,16 @@ class VirtualSpin extends ES6Client {
         this.updateLeds();
     };
     
-    setColor(color) {
-        this.color = color;
-        this.knob.render.strokeStyle = this.color.toString();
+    setStrokeColor(color) {
+        // debugger;
+        // this.color = color;
+        this.knob.render.strokeStyle = color.toString();
     };
+    setFillColor(color) {
+        // this.color = color;
+        this.knob.render.fillStyle = color.toString();
+    };
+    
     createShape() {
         var starVertices = [{
             x : 50,
@@ -390,27 +397,42 @@ class VirtualSpin extends ES6Client {
         
         let changes = {};
         
-        if (this.state.spinPosition !== position) {
-            let direction = position - this.state.spinPosition > 0 ? 1 : -1;
-            this.state.spinPosition = position;
-            this.emit('spin', direction, position);
-            // console.log('emit spin', position);
-        }
-        
         // round angle down to 4 decimal places because in matterjs it never actually reaches 0.0
-        let roundedAngle = Math.round(this.knob.angle * 1000) / 1000;
-        
+        let roundedAngle = Math.round(this.knob.angle * 100) / 100;
         let roundedAngularVelocity = Math.round(this.knob.angularVelocity * 1000) / 1000;
-        if (this.angularVelocity !== roundedAngle) {
-            this.state.angularVelocity = roundedAngularVelocity;
-            this.state.isSpinning = this.state.angularVelocity !== 0;
-            this.state.isSpinningLeft = this.state.angularVelocity < 0;
-            this.state.isSpinningRight = this.state.angularVelocity > 0;
-            this.state.isResting = !this.state.isSpinning;
-        }
         if (this.state.angle !== roundedAngle) {
-            this.state.angle = roundedAngle;
-            this.emit('rotate', this.state.angle, this);
+            clearTimeout(this.idleTimer);
+            
+            let changes = {
+                angularVelocity : roundedAngularVelocity,
+                isSpinning : true, //this.state.angularVelocity !== 0,
+                isSpinningLeft : this.state.angularVelocity < 0,
+                isSpinningRight : this.state.angularVelocity > 0,
+                isResting : !this.state.isSpinning,
+                angle : roundedAngle
+            };
+            
+            if (this.state.spinPosition !== position) {
+                let direction = position - this.state.spinPosition > 0 ? 1 : -1;
+                changes.spinPosition = position;
+                changes.spinDirection = direction;
+                this.emit('spin', direction, position);
+            }
+            
+            this.setState(changes);
+            
+            //this.emit('rotate', this.state.angle, this);
+            
+            this.idleTimer = setTimeout(() => {
+                this.setState({
+                    angularVelocity : 0,
+                    isSpinning : false,
+                    isSpinningLeft : false,
+                    isSpinningRight : false,
+                    isResting : true,
+                    angle : roundedAngle
+                });
+            },this.state.idleTimeout);
         }
         
     };
@@ -420,59 +442,77 @@ class VirtualSpin extends ES6Client {
     };
     
     pushKnob() {
-        if (this.state.knobHold) return;
+        if (this.state.knobHoldToggle) return;
         if (this.state.knobPushed) return;
         this.stop();
-        this.state.knobPushed = true;
-        this.emit('knob-pushed');
+        this.setState({
+            knobPushed: true
+        });
+        // this.emit('knob-pushed');
         this.emit('knob', true);
+        
     };
     releaseKnob() {
         this.stop();
-        if (!this.state.knobPushed) return;
-        this.state.knobPushed = false;
-        this.emit('knob-released');
+        // if (!this.state.knobPushed) return;
+        // this.state.knobPushed = false;
+        this.setState({
+            knobPushed: false,
+            knobHoldToggle: false
+        });
+        // this.emit('knob-released');
         this.emit('knob', false);
     };
     pushButton() {
-        if (this.state.buttonHold) return;
+        if (this.state.buttonHoldToggle) return;
         if (this.state.buttonPushed) return;
-        this.state.buttonPushed = true;
-        this.emit('button-pushed');
+        // this.state.buttonPushed = true;
+        this.setState({
+            buttonPushed: true
+        });
+        // this.emit('button-pushed');
         this.emit('button', true);
     };
     releaseButton() {
-        if (!this.state.buttonPushed) return;
-        this.state.buttonPushed = false;
-        this.emit('button-released');
+        // if (this.state.buttonHoldToggle)
+        // if (!this.state.buttonPushed) return;
+        // this.state.buttonPushed = false;
+        
+        this.setState({
+            buttonPushed: false,
+            buttonHoldToggle: false
+        });
+        // this.emit('button-released');
         this.emit('button', false);
     };
     
     toggleHoldKnob() {
-        this.state.knobHold = !this.state.knobHold;
-        if (this.state.knobHold) {
+        console.log('toggleHoldKnob');
+        this.setState({knobHoldToggle: !this.state.knobHoldToggle});
+        if (this.state.knobHoldToggle) {
             this.pushKnob();
-            console.log('knob-release');
-            this.emit('knob-release');
+            // console.log('knob-release');
+            // this.emit('knob-release');
         }
         else {
             this.releaseKnob();
-            console.log('knob-hold');
-            this.emit('knob-hold');
+            // console.log('knob-hold');
+            // this.emit('knob-hold');
         }
     };
     
     toggleHoldButton() {
-        this.state.buttonHold = !this.state.buttonHold;
-        if (this.state.buttonHold) {
+        console.log('toggleHoldButton');
+        this.setState({buttonHoldToggle: !this.state.buttonHoldToggle});
+        if (this.state.buttonHoldToggle) {
             this.pushButton();
-            console.log('button-release');
-            this.emit('button-release');
+            // console.log('button-hold');
+            // this.emit('button-hold');
         }
         else {
             this.releaseButton();
-            console.log('button-hold');
-            this.emit('button-hold');
+            // console.log('button-release');
+            // this.emit('button-release');
         }
     };
 }

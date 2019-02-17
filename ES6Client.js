@@ -33,6 +33,8 @@ class ES6Client extends EventEmitter {
 				var id = this.state ? this.state.id : data.id;
 				var changes = this.store.set(id, data);
 				this.state = this.store[id];
+				
+				this.emit('update', changes);
 				return changes;
 			}
 			else {
@@ -55,7 +57,8 @@ class ES6Client extends EventEmitter {
 		if (hasChanges) {
 			//this.state = Object.assign({}, this.state, changes);
 			//console.log('emit update', changes);
-			this.emit('update', this.state, changes);
+			// this.emit('update', this.state, changes);
+			this.emit('update', changes);
 			return changes;
 		}
 		else {
