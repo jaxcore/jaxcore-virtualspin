@@ -4,7 +4,8 @@
   "description": "Virtualized Multi-Dimensional Jaxcore Spin",
   "main": "jaxcore-virtualspin.js",
   "dependencies": {
-    "matter-js": "^0.14.2"
+    "matter-js": "^0.14.2",
+    "poly-decomp": "^0.3.0"
   },
   "devDependencies": {},
   "scripts": {

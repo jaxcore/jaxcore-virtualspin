@@ -1,4 +1,6 @@
 import EventEmitter from 'events';
+import decomp from 'poly-decomp';
+global.decomp = decomp;
 import Matter from 'matter-js';
 import plugin from 'jaxcore-plugin';
 // const ES6Client = plugin.ES6Client;
@@ -94,17 +96,111 @@ class VirtualSpin extends ES6Client {
         this.knob.render.strokeStyle = this.color.toString();
     };
     createShape() {
-        let shape = 'polygon';
-        this.knob = Bodies[shape](this.x, this.y, 3, this.size, {
+        var starVertices = [{
+            x : 50,
+            y : 0
+        },{
+            x : 63,
+            y : 38
+        },{
+            x : 100,
+            y : 38
+        },{
+            x : 69,
+            y : 59
+        },{
+            x : 82 ,
+            y : 100
+        },{
+            x : 50,
+            y : 75
+        },{
+            x : 18,
+            y : 100
+        },{
+            x : 31,
+            y : 59
+        },{
+            x : 0,
+            y : 38
+        },{
+            x : 37,
+            y : 38
+        }];
+        var start = Matter.Vertices.create(starVertices);
+    
+        var squareVertices = [{
+            x : 100,
+            y : 50
+        },{
+            x : 150,
+            y : 50
+        },{
+            x : 150,
+            y : 150
+        },{
+            x : 50,
+            y : 150
+        }];
+    
+        let centerX = 100;
+        let centerY = 100;
+        let width = 40;
+        let height = 50;
+        let a = 2*Math.PI / 3;
+        var arrowVertices = [{
+            x : centerX,
+            y : 0, //centerY - size*Math.cos(0),
+        },{
+            x : centerX + width*Math.sin(a),
+            y : centerY + height*Math.cos(a) + 30
+        },{
+            x : centerX + width*Math.sin(2*a),
+            y : centerY + height*Math.cos(2*a) + 30
+        }];
+        var arrow = Matter.Vertices.create(arrowVertices);
+        
+        // let centerX = 100;
+        // let centerY = 100;
+        // let size = 50;
+        // let a = 2*Math.PI / 3;
+        // var arrowVertices = [{
+        //     x : centerX,
+        //     y : 0, //centerY - size*Math.cos(0),
+        // },{
+        //     x : centerX + size*Math.sin(a),
+        //     y : centerY + size*Math.cos(a) + 20
+        // },{
+        //     x: centerX,
+        //     y: centerY - 20,
+        // },{
+        //     x : centerX + size*Math.sin(2*a),
+        //     y : centerY + size*Math.cos(2*a) + 20
+        // }];
+        // var arrow = Matter.Vertices.create(arrowVertices);
+        
+        this.knob = Bodies.fromVertices(this.x, this.y, arrow, {
+            // isStatic: true,
             frictionAir: this.state.friction,
             render: {
                 fillStyle: 'transparent',
                 strokeStyle: this.color,
                 lineWidth: 4
             }
-            // restitution: 0.1,
-            //background: "#F00"
-        });
+        }, true);
+        
+        // triangle
+        // let shape = 'polygon';
+        // this.knob = Bodies[shape](this.x, this.y, 3, this.size, {
+        //     frictionAir: this.state.friction,
+        //     render: {
+        //         fillStyle: 'transparent',
+        //         strokeStyle: this.color,
+        //         lineWidth: 4
+        //     }
+        //     // restitution: 0.1,
+        //     //background: "#F00"
+        // });
         
         // this.knob = Bodies.rectangle(100, 100, 50, 50, {
         //     frictionAir: this.state.friction,
