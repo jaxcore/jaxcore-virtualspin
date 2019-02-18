@@ -47,8 +47,6 @@ class VirtualSpinApp extends Component {
 			this.setState(state);
 		});
 		
-		debugger;
-		
 		Jaxcore.connectSpins(spin => {
 			console.log('spin connected', spin);
 			
@@ -78,7 +76,7 @@ class VirtualSpinApp extends Component {
 			for (let s = 0; s < this.state.numberSpins; s++) {
 				if (this.state.numberSpins === 1) {
 					color = new Color(255,255,255);
-					inverseColor = new Color(50,50,50);
+					inverseColor = new Color(255,0,0);
 				}
 				else if (s===0) {
 					color = startColor;
@@ -227,10 +225,10 @@ class VirtualSpinApp extends Component {
 							Button
 						</button>
 						<button id="holdknob" onClick={e => this.virtualspins[s].toggleHoldKnob()}>
-							{this.virtualspins[s].state.knobHold? 'Release':'Hold'} Knob
+							{this.state.spinStates[s].knobHoldToggle? 'Release':'Hold'} Knob
 						</button>
 						<button id="holdbutton" onClick={e => this.virtualspins[s].toggleHoldButton()}>
-							{this.virtualspins[s].state.knobHold? 'Release':'Hold'} Button
+							{this.state.spinStates[s].buttonHoldToggle? 'Release':'Hold'} Button
 						</button>
 						<div id="leds">
 							{this.renderLeds(s)}
