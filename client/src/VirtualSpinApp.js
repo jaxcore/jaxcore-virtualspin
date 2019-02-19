@@ -13,11 +13,14 @@ class VirtualSpinApp extends Component {
 		this.canvasRef = React.createRef();
 		
 		this.virtualspins = [];
+		this.realspins = {};
 		
 		this.state = {
 			connectedExtension: false,
 			numberSpins: 1,
-			spinStates: {}
+			virtualSpinStates: {},
+			realSpinStates: {},
+			spinMappings: []
 		};
 		
 		global.app = this;
@@ -50,15 +53,49 @@ class VirtualSpinApp extends Component {
 		Jaxcore.connectSpins(spin => {
 			console.log('spin connected', spin);
 			
+			if (this.realspins[spin.id]) {
+				this.realspins[spin.id].destroy();
+			}
+			
+			this.realspins[spin.id] = spin;
+			
+			if (this.state.spinMappings.indexOf(spin.id) > -1) {
+				console.log('already in');
+				debugger;
+				return;
+			}
+			
+			let vspinIndex = this.state.spinMappings.length;
+			this.state.spinMappings[vspinIndex] = spin.id;
+			
+			
+			this.spinCount = 0;
+			
 			spin.on('spin', (direction) => {
-				console.log('spin', direction, spin.state.spinPosition);
+				this.spinCount += direction;
+				
+				console.log('spin', direction, this.spinCount, spin.state.spinPosition);
+				//console.log('spin', direction, spin.state.spinPosition);
+				
+				if (direction === -1) this.virtualspins[vspinIndex].rotateLeft();
+				else this.virtualspins[vspinIndex].rotateRight();
 			});
 			spin.on('button', (pushed) => {
 				console.log('x button', pushed);
+				
+				if (pushed) this.virtualspins[vspinIndex].pushButton();
+				else this.virtualspins[vspinIndex].releaseButton();
 			});
 			spin.on('knob', (pushed) => {
 				console.log('knob', pushed);
+				
+				if (pushed) this.virtualspins[vspinIndex].pushKnob();
+				else this.virtualspins[vspinIndex].releaseKnob();
 			});
+			
+			// spin.on('update', (pushed) => {
+			// 	console.log('vs spin update', pushed);
+			// });
 			
 		});
 	}
@@ -128,10 +165,10 @@ class VirtualSpinApp extends Component {
 		
 		let _s = s;
 		
-		const spinStates = this.state.spinStates;
-		spinStates[_s] = virtualspin.state;
+		const virtualSpinStates = this.state.virtualSpinStates;
+		virtualSpinStates[_s] = virtualspin.state;
 		this.setState({
-			spinStates
+			virtualSpinStates
 		});
 		
 		for (let i = 0; i < 24; i++) {
@@ -165,11 +202,12 @@ class VirtualSpinApp extends Component {
 		
 		
 		virtualspin.on('update', (changes) => {
-			console.log('update', changes);
-			const spinStates = this.state.spinStates;
-			spinStates[_s] = virtualspin.state;
+			// console.log('update', changes);
+			
+			const virtualSpinStates = this.state.virtualSpinStates;
+			virtualSpinStates[_s] = virtualspin.state;
 			this.setState({
-				spinStates
+				virtualSpinStates
 			});
 		});
 		
@@ -213,22 +251,22 @@ class VirtualSpinApp extends Component {
 						</button>
 						<button onMouseDown={e => this.virtualspins[s].spinRightMax()}>&gt;&gt;</button>
 						
-						<button disabled={this.state.spinStates[s].knobHoldToggle}
+						<button disabled={this.state.virtualSpinStates[s].knobHoldToggle}
 								onMouseDown={e => this.virtualspins[s].pushKnob()}
 								onMouseUp={e => this.virtualspins[s].releaseKnob()}>
 							Knob
 						</button>
 						
-						<button disabled={this.state.spinStates[s].buttonHoldToggle}
+						<button disabled={this.state.virtualSpinStates[s].buttonHoldToggle}
 								onMouseDown={e => this.virtualspins[s].pushButton()}
 								onMouseUp={e => this.virtualspins[s].releaseButton()}>
 							Button
 						</button>
 						<button id="holdknob" onClick={e => this.virtualspins[s].toggleHoldKnob()}>
-							{this.state.spinStates[s].knobHoldToggle? 'Release':'Hold'} Knob
+							{this.state.virtualSpinStates[s].knobHoldToggle? 'Release':'Hold'} Knob
 						</button>
 						<button id="holdbutton" onClick={e => this.virtualspins[s].toggleHoldButton()}>
-							{this.state.spinStates[s].buttonHoldToggle? 'Release':'Hold'} Button
+							{this.state.virtualSpinStates[s].buttonHoldToggle? 'Release':'Hold'} Button
 						</button>
 						<div id="leds">
 							{this.renderLeds(s)}

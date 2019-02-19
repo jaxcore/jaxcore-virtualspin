@@ -79,6 +79,9 @@ class VirtualSpin extends ES6Client {
         this.rotateInterval = null;
         
         this.createShape();
+    
+        this.rotateLeftCount = 0;
+        this.rotateRightCount = 0;
     }
     
     //////
@@ -353,12 +356,15 @@ class VirtualSpin extends ES6Client {
     };
     
     setPosition(position) {
+        console.log('setPosition', position);
         let angle = (position / 32) * (Math.PI * 2);
         Body.rotate(this.knob, angle - this.knob.angle);
     };
     
     rotateLeft() {
-        this.stop();
+        this.rotateLeftCount++;
+        
+        // this.stop();
         this.setPosition(this.state.spinPosition - 1);
     };
     startRotateLeft() {
@@ -376,7 +382,9 @@ class VirtualSpin extends ES6Client {
     }
     
     rotateRight() {
-        this.stop();
+        this.rotateRightCount++;
+        // this.stop();
+        console.log('rotateRight', this.rotateRightCount);;
         this.setPosition(this.state.spinPosition + 1);
     };
     startRotateRight() {
