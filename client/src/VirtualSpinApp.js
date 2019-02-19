@@ -41,7 +41,7 @@ class VirtualSpinApp extends Component {
 		
 		// this.forceUpdate();
 		
-		let jx = Jaxcore;
+		// let jx = Jaxcore;
 		
 		
 		Jaxcore.subscribe((jaxcoreState) => {
@@ -54,9 +54,12 @@ class VirtualSpinApp extends Component {
 			console.log('spin connected', spin);
 			
 			if (this.realspins[spin.id]) {
+				console.log('destroy', spin);
+				debugger;
 				this.realspins[spin.id].destroy();
 			}
 			
+			debugger;
 			this.realspins[spin.id] = spin;
 			
 			if (this.state.spinMappings.indexOf(spin.id) > -1) {
@@ -66,8 +69,13 @@ class VirtualSpinApp extends Component {
 			}
 			
 			let vspinIndex = this.state.spinMappings.length;
-			this.state.spinMappings[vspinIndex] = spin.id;
 			
+			// this.state.spinMappings[vspinIndex] = spin.id;
+			let spinMappings = this.state.spinMappings;
+			spinMappings[vspinIndex] = spin.id;
+			this.setState({
+				spinMappings
+			});
 			
 			this.spinCount = 0;
 			
@@ -77,6 +85,7 @@ class VirtualSpinApp extends Component {
 				console.log('spin', direction, this.spinCount, spin.state.spinPosition);
 				//console.log('spin', direction, spin.state.spinPosition);
 				
+				this.virtualspins[vspinIndex].stop();
 				if (direction === -1) this.virtualspins[vspinIndex].rotateLeft();
 				else this.virtualspins[vspinIndex].rotateRight();
 			});

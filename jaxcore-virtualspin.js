@@ -25,6 +25,7 @@ class VirtualSpin extends ES6Client {
     constructor(config) {
         super();
         
+        this.Body = Body;
         this.config = config;
         // /this.canvasRef = config.canvasRef;
         
@@ -365,7 +366,8 @@ class VirtualSpin extends ES6Client {
         this.rotateLeftCount++;
         
         // this.stop();
-        this.setPosition(this.state.spinPosition - 1);
+        // this.setPosition(this.state.spinPosition - 1);
+        Body.rotate(this.knob, -Math.PI/16);
     };
     startRotateLeft() {
         this.stopRotate();
@@ -382,10 +384,12 @@ class VirtualSpin extends ES6Client {
     }
     
     rotateRight() {
-        this.rotateRightCount++;
-        // this.stop();
-        console.log('rotateRight', this.rotateRightCount);;
-        this.setPosition(this.state.spinPosition + 1);
+        // this.rotateRightCount++;
+        // // this.stop();
+        // console.log('rotateRight', this.rotateRightCount);;
+        // this.setPosition(this.state.spinPosition + 1);
+        
+        Body.rotate(this.knob, Math.PI/16);
     };
     startRotateRight() {
         this.stopRotate();
