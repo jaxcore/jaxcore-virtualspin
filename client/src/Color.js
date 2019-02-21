@@ -1,5 +1,5 @@
 function isColor(c) {
-	// return c instanceOf Color;
+	return c instanceof Color;
 }
 
 var colors = require('./colors');

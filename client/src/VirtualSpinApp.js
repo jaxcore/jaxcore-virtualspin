@@ -59,7 +59,6 @@ class VirtualSpinApp extends Component {
 				this.realspins[spin.id].destroy();
 			}
 			
-			debugger;
 			this.realspins[spin.id] = spin;
 			
 			if (this.state.spinMappings.indexOf(spin.id) > -1) {
@@ -80,6 +79,8 @@ class VirtualSpinApp extends Component {
 			this.spinCount = 0;
 			
 			spin.on('spin', (direction) => {
+				// debugger;
+				
 				this.spinCount += direction;
 				
 				console.log('spin', direction, this.spinCount, spin.state.spinPosition);
