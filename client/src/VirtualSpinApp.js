@@ -1,9 +1,7 @@
 import React, {Component} from 'react';
-import Jaxcore from 'jaxcore-client';
+import Jaxcore, {Color} from 'jaxcore-client';
 import VirtualSpin, {} from 'jaxcore-virtualspin';
 
-// import Color from 'jaxcore-color';
-import Color from './Color';
 global.Color = Color;
 
 class VirtualSpinApp extends Component {

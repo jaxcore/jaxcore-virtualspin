@@ -1,13 +1,16 @@
-import EventEmitter from 'events';
+// import EventEmitter from 'events';
 import decomp from 'poly-decomp';
-
 global.decomp = decomp;
 import Matter from 'matter-js';
-import plugin from 'jaxcore-plugin';
-// const ES6Client = plugin.ES6Client;
-import ES6Client from './ES6Client';
+// import plugin from 'jaxcore-plugin';
 
-const virtualSpinStore = plugin.createStore('VSpin');
+import Jaxcore, { CollectionModel, createStore} from 'jaxcore-client';
+
+// import ES6Client from './ES6Client';
+
+// const ES6Client = plugin.ES6Client;
+
+const virtualSpinStore = createStore('VSpin');
 
 const Engine = Matter.Engine,
 	Render = Matter.Render,
@@ -26,7 +29,7 @@ function startInterval(f) {
 
 let _instances = 1;
 
-class VirtualSpin extends ES6Client {
+class VirtualSpin extends CollectionModel {
 	constructor(config) {
 		super();
 		

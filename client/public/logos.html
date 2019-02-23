@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Logos</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var ctx = document.getElementById('c').getContext('2d');
+            ctx.fillStyle = '#FFF';
+            ctx.fillRect(0,0,900,900);
+
+			var oReq = new XMLHttpRequest();
+			oReq.addEventListener("load", function() {
+				var data = this.responseText;
+				data = data.replace(/\#000000/g,'#FF0000');
+
+				// setTimeout(function() {
+                    // data = data.replace(/#000000/g,'#FF0000');
+                    // alert('hi');
+                    // var oParser = new DOMParser();
+                    // var xml = oParser.parseFromString(data, "application/xml");
+                    //
+                    // var XMLS = new XMLSerializer();
+                    // var xml = XMLS.serializeToString(data);
+
+                    // var xml = new XMLSerializer().serializeToString(data);
+
+                    var img = new Image();
+                    img.src = 'data:image/svg+xml;base64,' + btoa(data);
+                    ctx.drawImage(img, 50, 50);
+                    setTimeout(function() {
+						ctx.drawImage(img, 50, 50);
+                    },1000);
+				// },1000);
+            });
+			oReq.open("GET", "logo.svg");
+			oReq.send();
+        });
+    </script>
+</head>
+<body>
+<canvas id="c" width="900" height="900"></canvas>
+</body>
+</html>
