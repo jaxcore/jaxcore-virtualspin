@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import Jaxcore, {Color} from 'jaxcore-client';
-import VirtualSpin, {} from 'jaxcore-virtualspin';
+import VirtualSpin from 'jaxcore-virtualspin';
 
 global.Color = Color;
 
@@ -8,6 +8,7 @@ class VirtualSpinApp extends Component {
 	constructor() {
 		super();
 		
+		this.canvasDivRef = React.createRef();
 		this.canvasRef = React.createRef();
 		
 		this.virtualspins = [];
@@ -21,6 +22,8 @@ class VirtualSpinApp extends Component {
 			spinMappings: []
 		};
 		
+		this.logos = [];
+		
 		global.app = this;
 	}
 	
@@ -28,19 +31,44 @@ class VirtualSpinApp extends Component {
 	
 	}
 	
+	loadLogo(callback) {
+		var oReq = new XMLHttpRequest();
+		oReq.addEventListener("load", function () {
+			callback(this.responseText);
+		});
+		oReq.open("GET", "logo.svg");
+		oReq.send();
+	}
+	
+	createColoredLogo(data, color) {
+		data = data.replace(/\#000000/g, color);
+		var img = new Image();
+		img.src = 'data:image/svg+xml;base64,' + btoa(data);
+		return img;
+	}
+	
 	componentDidMount() {
-		this.engine = VirtualSpin.createWorld(this.canvasRef, window.innerWidth, window.innerHeight);
+		this.loadLogo((logoSVG) => {
+			this.logoSVG = logoSVG;
+			this.createWorld();
+		});
+	}
+	
+	createWorld() {
+		
+		this.logos = [];
+		
+		
+		let ctx = this.canvasRef.current.getContext('2d');
+		this.canvasRef.current.width = window.innerWidth;
+		this.canvasRef.current.height = window.innerHeight;
+		this.engine = VirtualSpin.createWorldLogos(ctx, window.innerWidth, window.innerHeight, this.logos);
 		
 		for (let s = 0; s < this.state.numberSpins; s++) {
 			this.createVirtualSpin(s);
 		}
 		
 		this.updateColors();
-		
-		// this.forceUpdate();
-		
-		// let jx = Jaxcore;
-		
 		
 		Jaxcore.subscribe((jaxcoreState) => {
 			const {state} = this;
@@ -77,12 +105,9 @@ class VirtualSpinApp extends Component {
 			this.spinCount = 0;
 			
 			spin.on('spin', (direction) => {
-				// debugger;
-				
 				this.spinCount += direction;
 				
 				console.log('spin', direction, this.spinCount, spin.state.spinPosition);
-				//console.log('spin', direction, spin.state.spinPosition);
 				
 				this.virtualspins[vspinIndex].stop();
 				if (direction === -1) this.virtualspins[vspinIndex].rotateLeft();
@@ -100,73 +125,53 @@ class VirtualSpinApp extends Component {
 				if (pushed) this.virtualspins[vspinIndex].pushKnob();
 				else this.virtualspins[vspinIndex].releaseKnob();
 			});
-			
-			// spin.on('update', (pushed) => {
-			// 	console.log('vs spin update', pushed);
-			// });
-			
 		});
 	}
 	
 	
 	updateColors() {
-		let startColor = new Color(255,0,0);
-		let spincolors = [];
+		let startColor = new Color(255, 0, 0);
 		let h, color, inverseColor;
-		// if (this.state.numberSpins === 1) {
-		// 	spincolors[0] = new Color(255,255,255);
-		// 	this.virtualspins[0].setColor(spincolors[0]);
-		// }
-		// else {
-			for (let s = 0; s < this.state.numberSpins; s++) {
-				if (this.state.numberSpins === 1) {
-					color = new Color(255,255,255);
-					inverseColor = new Color(255,0,0);
-				}
-				else if (s===0) {
-					color = startColor;
-					inverseColor = startColor.invert();
-				}
-				else {
-					h = 1 / this.state.numberSpins;
-					// spincolors[s] = spincolors[s-1].shiftHue(h);
-					color = this.virtualspins[s-1].color.shiftHue(h);
-					inverseColor = color.invert();
-					
-				}
-				
-				this.virtualspins[s].color = color; //spincolors[s];
-				this.virtualspins[s].inverseColor = inverseColor; //spincolors[s].invert();
-				
-				this.virtualspins[s].setStrokeColor(color);
-				//this.virtualspins[s].inverseColor = spincolors[s].invert();
+		
+		for (let s = 0; s < this.state.numberSpins; s++) {
+			if (this.state.numberSpins === 1) {
+				color = new Color(255, 255, 255);
+				inverseColor = new Color(255, 0, 0);
+			} else if (s === 0) {
+				color = startColor;
+				inverseColor = startColor.invert();
+			} else {
+				h = 1 / this.state.numberSpins;
+				color = this.virtualspins[s - 1].color.shiftHue(h);
+				inverseColor = color.invert();
 			}
-		// }
+			
+			this.virtualspins[s].color = color;
+			this.virtualspins[s].inverseColor = inverseColor;
+			this.virtualspins[s].setStrokeColor(color);
+			this.logos[s] = this.createColoredLogo(this.logoSVG, color);
+		}
 	}
 	
 	createVirtualSpin(s) {
 		if (this.virtualspins[s]) return;
 		
-		//this.state.numberSpins
 		let numColumns = Math.floor(window.innerWidth / 200);
 		
-		let column = s<numColumns? s : s % numColumns; //; //row<1? s : s % row;
-		let row = Math.floor(s / numColumns); //Math.ceil(s / numColumns);
+		let column = s < numColumns ? s : s % numColumns;
+		let row = Math.floor(s / numColumns);
 		
 		let size = 200;
 		
-		let x = size*column + size/2;
-		let y = size*row + size/2;
+		let x = size * column + size / 2;
+		let y = size * row + size / 2;
 		
-		console.log('spin', s, 'col='+column, 'row='+row, 'x='+x, 'y='+y);
+		console.log('spin', s, 'col=' + column, 'row=' + row, 'x=' + x, 'y=' + y);
 		let virtualspin = new VirtualSpin({
 			engine: this.engine,
 			canvasRef: this.canvasRef,
 			x,
 			y
-			// ledRefs: this.ledRefs[s],
-			// width: 400,
-			// height: 400
 		});
 		
 		this.virtualspins[s] = virtualspin;
@@ -185,33 +190,24 @@ class VirtualSpinApp extends Component {
 		
 		virtualspin.setLeds(virtualspin.ledRefs);
 		
-		// let inverseColor = this.spininversecolors[s];
 		virtualspin.on('spin', (direction, position) => {
-			//console.log('on spin position = ' + position + ' direction = ' + direction + ' angle = ' + virtualspin.angle);
-			// var color;
-			// if (virtualspin.knobPushed) color = virtualspin.color; //[255, 0, 255];
-			// else if (virtualspin.buttonPushed) color = virtualspin.inverseColor; ///[255, 255];
-			// else color = virtualspin.color; //virtualspin.color; //[0, 0, 255];
-			
 			virtualspin.rotateLeds(direction, virtualspin.color.getRGB());
 		});
 		
 		virtualspin.on('knob', (pushed) => {
-			console.log('knob pushed='+pushed);
+			console.log('knob pushed=' + pushed);
 			if (pushed) virtualspin.ledsOn(virtualspin.color.getRGB());
 			else virtualspin.ledsOff();
 		});
 		
 		virtualspin.on('button', (pushed) => {
-			console.log('button pushed='+pushed);
+			console.log('button pushed=' + pushed);
 			if (pushed) virtualspin.ledsOn(virtualspin.inverseColor.getRGB());
 			else virtualspin.ledsOff();
 		});
 		
 		
 		virtualspin.on('update', (changes) => {
-			// console.log('update', changes);
-			
 			const virtualSpinStates = this.state.virtualSpinStates;
 			virtualSpinStates[_s] = virtualspin.state;
 			this.setState({
@@ -221,22 +217,23 @@ class VirtualSpinApp extends Component {
 		
 		virtualspin.startSimulation();
 		
-		
 		return virtualspin;
 	}
 	
 	componentDidUpdate() {
-
+	
 	}
 	
 	render() {
 		return (
 			<div>
-				<button onClick={e=>this.addVirtualSpin()}>Add</button>
+				<button onClick={e => this.addVirtualSpin()}>Add</button>
 				
 				{this.renderControlPanels()}
 				
-				<div id="canvas" ref={this.canvasRef} />
+				<canvas id="canvas" ref={this.canvasRef}/>
+				
+				{/*<div id="canvasDiv" ref={this.canvasDivRef} />*/}
 			</div>
 		);
 	}
@@ -271,10 +268,10 @@ class VirtualSpinApp extends Component {
 							Button
 						</button>
 						<button id="holdknob" onClick={e => this.virtualspins[s].toggleHoldKnob()}>
-							{this.state.virtualSpinStates[s].knobHoldToggle? 'Release':'Hold'} Knob
+							{this.state.virtualSpinStates[s].knobHoldToggle ? 'Release' : 'Hold'} Knob
 						</button>
 						<button id="holdbutton" onClick={e => this.virtualspins[s].toggleHoldButton()}>
-							{this.state.virtualSpinStates[s].buttonHoldToggle? 'Release':'Hold'} Button
+							{this.state.virtualSpinStates[s].buttonHoldToggle ? 'Release' : 'Hold'} Button
 						</button>
 						<div id="leds">
 							{this.renderLeds(s)}
@@ -287,7 +284,7 @@ class VirtualSpinApp extends Component {
 	}
 	
 	addVirtualSpin() {
-		let numberSpins = this.state.numberSpins+1;
+		let numberSpins = this.state.numberSpins + 1;
 		for (let s = 0; s < numberSpins; s++) {
 			this.createVirtualSpin(s);
 		}
@@ -303,7 +300,7 @@ class VirtualSpinApp extends Component {
 		let leds = [];
 		for (var i = 0; i < 24; i++) {
 			if (this.virtualspins[s]) {
-				leds.push(<div key={s+'_'+i} ref={this.virtualspins[s].ledRefs[i]}/>);
+				leds.push(<div key={s + '_' + i} ref={this.virtualspins[s].ledRefs[i]}/>);
 			}
 		}
 		return leds;

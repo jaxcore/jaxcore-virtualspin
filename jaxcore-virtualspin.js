@@ -1,10 +1,11 @@
 // import EventEmitter from 'events';
 import decomp from 'poly-decomp';
+
 global.decomp = decomp;
 import Matter from 'matter-js';
 // import plugin from 'jaxcore-plugin';
 
-import Jaxcore, { CollectionModel, createStore} from 'jaxcore-client';
+import Jaxcore, {CollectionModel, createStore} from 'jaxcore-client';
 
 // import ES6Client from './ES6Client';
 
@@ -95,6 +96,7 @@ class VirtualSpin extends CollectionModel {
 		
 		this.rotateLeftCount = 0;
 		this.rotateRightCount = 0;
+		
 	}
 	
 	setLeds(ledRefs) {
@@ -553,6 +555,73 @@ class VirtualSpin extends CollectionModel {
 }
 
 VirtualSpin.engine = null;
+
+VirtualSpin.createWorldLogos = function (ctx, worldWidth, worldHeight, logos) {
+	let engine = Engine.create();
+	
+	engine.world.gravity.y = 0;
+	
+	engine.Vertices = Vertices;
+	engine.Bodies = Bodies;
+	
+	function render() {
+		
+		Engine.update(engine, 16);
+		
+		
+		
+		var bodies = Composite.allBodies(engine.world);
+		
+		// ctx.clearRect(0, 0, canvas.width, canvas.height);
+		// ctx.beginPath();
+		// for (var i = 0; i < bodies.length; i += 1) {
+		// 	var vertices = bodies[i].vertices;
+		// 	ctx.moveTo(vertices[0].x, vertices[0].y);
+		// 	for (var j = 1; j < vertices.length; j += 1) {
+		// 		ctx.lineTo(vertices[j].x, vertices[j].y);
+		// 	}
+		// 	ctx.lineTo(vertices[0].x, vertices[0].y);
+		// }
+		//
+		// ctx.lineWidth = 1;
+		// ctx.strokeStyle = '#FFFFFF';
+		// ctx.stroke();
+		
+		ctx.fillStyle = '#000000';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		
+		let logoSize = 150;
+		
+		let body, img;
+		for (var i = 0; i < bodies.length; i += 1) {
+			body = bodies[i];
+			
+			ctx.save();
+			
+			// ctx.translate(-50, -50);
+			
+			ctx.translate(body.position.x, body.position.y);
+			
+			ctx.rotate(body.angle);
+			
+			img = logos[i];
+			ctx.drawImage(img, -logoSize/2, -logoSize/2, logoSize, logoSize);
+			
+			ctx.translate(0, 0);
+			
+			ctx.restore();
+			// ctx.fillStyle = '#FFFFFF';
+			// ctx.fillRect(body.position.x, body.position.y, 10, 10);
+			
+		}
+		
+		window.requestAnimationFrame(render);
+	}
+	
+	render();
+	
+	return engine;
+};
 
 VirtualSpin.createWorld = function (canvasRef, worldWidth, worldHeight) {
 	let engine = Engine.create();
