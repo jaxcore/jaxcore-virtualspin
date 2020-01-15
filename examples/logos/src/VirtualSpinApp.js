@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import Jaxcore, {Color} from 'jaxcore-client';
+import Color from 'color-class';
 import VirtualSpin from 'jaxcore-virtualspin';
 
 global.Color = Color;
@@ -41,7 +41,7 @@ class VirtualSpinApp extends Component {
 	}
 	
 	createColoredLogo(data, color) {
-		data = data.replace(/\#000000/g, color);
+		data = data.replace(/#000000/g, color);
 		var img = new Image();
 		img.src = 'data:image/svg+xml;base64,' + btoa(data);
 		return img;
@@ -58,11 +58,12 @@ class VirtualSpinApp extends Component {
 		
 		this.logos = [];
 		
-		
+		let canvas = this.canvasRef.current;
 		let ctx = this.canvasRef.current.getContext('2d');
 		this.canvasRef.current.width = window.innerWidth;
 		this.canvasRef.current.height = window.innerHeight;
-		this.engine = VirtualSpin.createWorldLogos(ctx, window.innerWidth, window.innerHeight, this.logos);
+		// this.engine = VirtualSpin.createWorldLogos(ctx, window.innerWidth, window.innerHeight, 132, this.logos);
+		this.engine = VirtualSpin.createWorldLogos(canvas, 130, 120, 132, this.logos);
 		
 		for (let s = 0; s < this.state.numberSpins; s++) {
 			this.createVirtualSpin(s);
@@ -70,62 +71,64 @@ class VirtualSpinApp extends Component {
 		
 		this.updateColors();
 		
-		Jaxcore.subscribe((jaxcoreState) => {
-			const {state} = this;
-			state.connectedExtension = jaxcoreState.connectedExtension;
-			this.setState(state);
-		});
-		
-		Jaxcore.connectSpins(spin => {
-			console.log('spin connected', spin);
-			
-			if (this.realspins[spin.id]) {
-				console.log('destroy', spin);
-				debugger;
-				this.realspins[spin.id].destroy();
-			}
-			
-			this.realspins[spin.id] = spin;
-			
-			if (this.state.spinMappings.indexOf(spin.id) > -1) {
-				console.log('already in');
-				debugger;
-				return;
-			}
-			
-			let vspinIndex = this.state.spinMappings.length;
-			
-			// this.state.spinMappings[vspinIndex] = spin.id;
-			let spinMappings = this.state.spinMappings;
-			spinMappings[vspinIndex] = spin.id;
-			this.setState({
-				spinMappings
-			});
-			
-			this.spinCount = 0;
-			
-			spin.on('spin', (direction) => {
-				this.spinCount += direction;
-				
-				console.log('spin', direction, this.spinCount, spin.state.spinPosition);
-				
-				this.virtualspins[vspinIndex].stop();
-				if (direction === -1) this.virtualspins[vspinIndex].rotateLeft();
-				else this.virtualspins[vspinIndex].rotateRight();
-			});
-			spin.on('button', (pushed) => {
-				console.log('x button', pushed);
-				
-				if (pushed) this.virtualspins[vspinIndex].pushButton();
-				else this.virtualspins[vspinIndex].releaseButton();
-			});
-			spin.on('knob', (pushed) => {
-				console.log('knob', pushed);
-				
-				if (pushed) this.virtualspins[vspinIndex].pushKnob();
-				else this.virtualspins[vspinIndex].releaseKnob();
-			});
-		});
+		// Jaxcore.subscribe((jaxcoreState) => {
+		// 	const {state} = this;
+		// 	state.connectedExtension = jaxcoreState.connectedExtension;
+		// 	this.setState(state);
+		// });
+		//
+		// console.log('spin connected', spin);
+		//
+		// Jaxcore.connectSpins(spin => {
+		//
+		//
+		// 	if (this.realspins[spin.id]) {
+		// 		console.log('destroy', spin);
+		// 		debugger;
+		// 		this.realspins[spin.id].destroy();
+		// 	}
+		//
+		// 	this.realspins[spin.id] = spin;
+		//
+		// 	if (this.state.spinMappings.indexOf(spin.id) > -1) {
+		// 		console.log('already in');
+		// 		debugger;
+		// 		return;
+		// 	}
+		//
+		// 	let vspinIndex = this.state.spinMappings.length;
+		//
+		// 	// this.state.spinMappings[vspinIndex] = spin.id;
+		// 	let spinMappings = this.state.spinMappings;
+		// 	spinMappings[vspinIndex] = spin.id;
+		// 	this.setState({
+		// 		spinMappings
+		// 	});
+		//
+		// 	this.spinCount = 0;
+		//
+		// 	spin.on('spin', (direction) => {
+		// 		this.spinCount += direction;
+		//
+		// 		console.log('spin', direction, this.spinCount, spin.state.spinPosition);
+		//
+		// 		this.virtualspins[vspinIndex].stop();
+		// 		if (direction === -1) this.virtualspins[vspinIndex].rotateLeft();
+		// 		else this.virtualspins[vspinIndex].rotateRight();
+		// 	});
+		// 	spin.on('button', (pushed) => {
+		// 		console.log('x button', pushed);
+		//
+		// 		if (pushed) this.virtualspins[vspinIndex].pushButton();
+		// 		else this.virtualspins[vspinIndex].releaseButton();
+		// 	});
+		// 	spin.on('knob', (pushed) => {
+		// 		console.log('knob', pushed);
+		//
+		// 		if (pushed) this.virtualspins[vspinIndex].pushKnob();
+		// 		else this.virtualspins[vspinIndex].releaseKnob();
+		// 	});
+		// });
 	}
 	
 	
@@ -154,6 +157,7 @@ class VirtualSpinApp extends Component {
 	}
 	
 	createVirtualSpin(s) {
+		
 		if (this.virtualspins[s]) return;
 		
 		let numColumns = Math.floor(window.innerWidth / 200);
@@ -170,8 +174,11 @@ class VirtualSpinApp extends Component {
 		let virtualspin = new VirtualSpin({
 			engine: this.engine,
 			canvasRef: this.canvasRef,
-			x,
-			y
+			x: 140,
+			y: 70,
+			bodySize: 85,
+			width: 90,
+			height: 90
 		});
 		
 		this.virtualspins[s] = virtualspin;
@@ -190,7 +197,11 @@ class VirtualSpinApp extends Component {
 		
 		virtualspin.setLeds(virtualspin.ledRefs);
 		
+		virtualspin.setEngine(this.engine);
+		
+		
 		virtualspin.on('spin', (direction, position) => {
+			console.log('spin', direction);
 			virtualspin.rotateLeds(direction, virtualspin.color.getRGB());
 		});
 		
@@ -208,6 +219,7 @@ class VirtualSpinApp extends Component {
 		
 		
 		virtualspin.on('update', (changes) => {
+			console.log('update', changes);
 			const virtualSpinStates = this.state.virtualSpinStates;
 			virtualSpinStates[_s] = virtualspin.state;
 			this.setState({

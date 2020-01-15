@@ -1,9 +1,10 @@
 {
   "name": "jaxcore-virtualspin",
-  "version": "0.0.3",
-  "description": "Virtualized Multi-Dimensional Jaxcore Spin",
+  "version": "0.0.4",
+  "description": "A virtual wheel/gear physics simulation for use with Jaxcore Spin",
   "main": "jaxcore-virtualspin.js",
   "dependencies": {
+    "jaxcore": "0.0.1",
     "matter-js": "^0.14.2",
     "poly-decomp": "^0.3.0"
   },

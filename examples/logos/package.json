@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "jaxcore-plugin": "../../jaxcore-plugin/",
+    "color-class": "git+https://github.com/dsteinman/color-class.git",
     "react": "^16.8.1",
     "react-dom": "^16.8.1",
     "react-scripts": "2.1.5"

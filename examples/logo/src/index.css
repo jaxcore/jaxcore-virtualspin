@@ -2,13 +2,16 @@ html,
 body {
     margin: 0;
     padding: 0;
-    background-color: #ccc;
+    background-color: #000;
+    color: white;
 }
 
-#canvas {
-    position: absolute;
-    margin: 0;
-    zoom: 1;
+canvas {
+    /*position: absolute;*/
+    /*margin: 0;*/
+    /*zoom: 1;*/
+
+    border: 1px solid red;
 }
 
 #leds {

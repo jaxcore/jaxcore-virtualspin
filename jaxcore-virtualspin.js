@@ -1,17 +1,11 @@
 // import EventEmitter from 'events';
-import decomp from 'poly-decomp';
-
-global.decomp = decomp;
 import Matter from 'matter-js';
-// import plugin from 'jaxcore-plugin';
+import decomp from 'poly-decomp';
+window.decomp = decomp;
 
-import Jaxcore, {CollectionModel, createStore} from 'jaxcore-client';
+import {Client, createClientStore} from 'jaxcore';
 
-// import ES6Client from './ES6Client';
-
-// const ES6Client = plugin.ES6Client;
-
-const virtualSpinStore = createStore('VSpin');
+const virtualSpinStore = createClientStore('VSpin');
 
 const Engine = Matter.Engine,
 	Render = Matter.Render,
@@ -30,18 +24,17 @@ function startInterval(f) {
 
 let _instances = 1;
 
-class VirtualSpin extends CollectionModel {
+class VirtualSpin extends Client {
 	constructor(config) {
 		super();
 		
 		this.Body = Body;
 		this.config = config;
-		// /this.canvasRef = config.canvasRef;
 		
 		this.engine = config.engine;
 		
-		this.defaultSize = 200;
-		this.defaultBodySize = 50;
+		this.defaultSize = config.bodySize;
+		this.defaultBodySize = config.bodySize || 50;
 		this.worldWidth = config.width || 200;
 		this.worldHeight = config.height || 200;
 		this.worldSize = Math.min(this.worldWidth, this.worldHeight);
@@ -51,8 +44,6 @@ class VirtualSpin extends CollectionModel {
 		this.size = this.scale * (this.defaultBodySize);
 		
 		this.color = config.color || 'white';
-		
-		//this.shape = config.shape || 'rectangle'
 		
 		this.ledRefs = [];
 		this.ledColors = [];
@@ -73,7 +64,7 @@ class VirtualSpin extends CollectionModel {
 			isSpinning: false,
 			isSpinningLeft: false,
 			isSpinningRight: false,
-			isResting: false,
+			// isResting: false,
 			angularVelocity: 0,
 			torqueStart: config.torqueStart || 0,
 			leftTorqueAccel: config.torqueStart || 0,
@@ -83,7 +74,7 @@ class VirtualSpin extends CollectionModel {
 			torqueInterval: (config.torqueMax || 20),
 			friction: (config.friction || 0.05),
 			updateInterval: (config.updateInterval || 10),
-			idleTimeout: 400
+			idleTimeout: 1000
 		});
 		
 		this.spinLeftTimer = null;
@@ -93,10 +84,6 @@ class VirtualSpin extends CollectionModel {
 		
 		if (config.shape) this.setShape(config.shape);
 		else this.createShape();
-		
-		this.rotateLeftCount = 0;
-		this.rotateRightCount = 0;
-		
 	}
 	
 	setLeds(ledRefs) {
@@ -105,68 +92,14 @@ class VirtualSpin extends CollectionModel {
 	};
 	
 	setStrokeColor(color) {
-		// debugger;
-		// this.color = color;
 		this.knob.render.strokeStyle = color.toString();
 	};
 	
 	setFillColor(color) {
-		// this.color = color;
 		this.knob.render.fillStyle = color.toString();
 	};
 	
 	createShape() {
-		
-		// STAR:
-		// var starVertices = [{
-		//     x : 50,
-		//     y : 0
-		// },{
-		//     x : 63,
-		//     y : 38
-		// },{
-		//     x : 100,
-		//     y : 38
-		// },{
-		//     x : 69,
-		//     y : 59
-		// },{
-		//     x : 82 ,
-		//     y : 100
-		// },{
-		//     x : 50,
-		//     y : 75
-		// },{
-		//     x : 18,
-		//     y : 100
-		// },{
-		//     x : 31,
-		//     y : 59
-		// },{
-		//     x : 0,
-		//     y : 38
-		// },{
-		//     x : 37,
-		//     y : 38
-		// }];
-		// var star = Matter.Vertices.create(starVertices);
-		
-		
-		// SQUARE:
-		// var squareVertices = [{
-		//     x : 100,
-		//     y : 50
-		// },{
-		//     x : 150,
-		//     y : 50
-		// },{
-		//     x : 150,
-		//     y : 150
-		// },{
-		//     x : 50,
-		//     y : 150
-		// }];
-		
 		
 		// ARROW:
 		let centerX = 100;
@@ -186,25 +119,6 @@ class VirtualSpin extends CollectionModel {
 		}];
 		var arrow = Matter.Vertices.create(arrowVertices);
 		
-		// let centerX = 100;
-		// let centerY = 100;
-		// let size = 50;
-		// let a = 2*Math.PI / 3;
-		// var arrowVertices = [{
-		//     x : centerX,
-		//     y : 0, //centerY - size*Math.cos(0),
-		// },{
-		//     x : centerX + size*Math.sin(a),
-		//     y : centerY + size*Math.cos(a) + 20
-		// },{
-		//     x: centerX,
-		//     y: centerY - 20,
-		// },{
-		//     x : centerX + size*Math.sin(2*a),
-		//     y : centerY + size*Math.cos(2*a) + 20
-		// }];
-		// var arrow = Matter.Vertices.create(arrowVertices);
-		
 		let shape = Bodies.fromVertices(this.x, this.y, arrow, {
 			// isStatic: true,
 			frictionAir: this.state.friction,
@@ -214,26 +128,6 @@ class VirtualSpin extends CollectionModel {
 				lineWidth: 4
 			}
 		}, true);
-		
-		// triangle
-		// let shape = 'polygon';
-		// this.knob = Bodies[shape](this.x, this.y, 3, this.size, {
-		//     frictionAir: this.state.friction,
-		//     render: {
-		//         fillStyle: 'transparent',
-		//         strokeStyle: this.color,
-		//         lineWidth: 4
-		//     }
-		//     // restitution: 0.1,
-		//     //background: "#F00"
-		// });
-		
-		// this.knob = Bodies.rectangle(100, 100, 50, 50, {
-		//     frictionAir: this.state.friction,
-		//     // background: "#F00"
-		//     background: "red",
-		//     wireframeBackground: 'red'
-		// });
 		
 		this.setShape(shape);
 		
@@ -309,10 +203,12 @@ class VirtualSpin extends CollectionModel {
 	};
 	
 	rotate(angle) {
+		this.startEngine();
 		Body.rotate(this.knob, angle);
 	};
 	
 	applyTorque(torque) {
+		this.startEngine();
 		this.setTorque(this.knob.torque + torque * this.scale);
 	};
 	
@@ -342,9 +238,7 @@ class VirtualSpin extends CollectionModel {
 	};
 	
 	startSpinLeft() {
-		// if (this.state.isSpinningLeft) return;
 		this.stop();
-		// this.state.isSpinningLeft = true;
 		this.state.leftTorqueAccel = this.state.torqueStart;
 		clearTimeout(this.spinLeftTimer);
 		let me = this;
@@ -355,7 +249,6 @@ class VirtualSpin extends CollectionModel {
 	};
 	
 	stopSpinLeft() {
-		// this.state.isSpinningLeft = false;
 		clearTimeout(this.spinLeftTimer);
 	};
 	
@@ -385,10 +278,7 @@ class VirtualSpin extends CollectionModel {
 	};
 	
 	rotateLeft() {
-		this.rotateLeftCount++;
-		
-		// this.stop();
-		// this.setPosition(this.state.spinPosition - 1);
+		this.startEngine();
 		Body.rotate(this.knob, -Math.PI / 16);
 	};
 	
@@ -407,11 +297,7 @@ class VirtualSpin extends CollectionModel {
 	}
 	
 	rotateRight() {
-		// this.rotateRightCount++;
-		// // this.stop();
-		// console.log('rotateRight', this.rotateRightCount);;
-		// this.setPosition(this.state.spinPosition + 1);
-		
+		this.startEngine();
 		Body.rotate(this.knob, Math.PI / 16);
 	};
 	
@@ -425,26 +311,30 @@ class VirtualSpin extends CollectionModel {
 	};
 	
 	startSimulation() {
-		this.updateInterval = setInterval(this.update.bind(this), this.state.updateInterval);
+		clearTimeout(this.idleTimer);
+		if (!this._simulationActive) {
+			console.log('startSimulation');
+			this._simulationActive = true;
+			this.updateInterval = setInterval(this.update.bind(this), this.state.updateInterval);
+		}
 	}
 	
 	update() {
 		let position = this.getPosition();
 		
-		let changes = {};
-		
 		// round angle down to 4 decimal places because in matterjs it never actually reaches 0.0
 		let roundedAngle = Math.round(this.knob.angle * 100) / 100;
+		
 		let roundedAngularVelocity = Math.round(this.knob.angularVelocity * 1000) / 1000;
 		if (this.state.angle !== roundedAngle) {
 			clearTimeout(this.idleTimer);
 			
 			let changes = {
 				angularVelocity: roundedAngularVelocity,
-				isSpinning: true, //this.state.angularVelocity !== 0,
+				isSpinning: true,
 				isSpinningLeft: this.state.angularVelocity < 0,
 				isSpinningRight: this.state.angularVelocity > 0,
-				isResting: !this.state.isSpinning,
+				// isResting: !this.state.isSpinning,
 				angle: roundedAngle
 			};
 			
@@ -465,16 +355,21 @@ class VirtualSpin extends CollectionModel {
 					isSpinning: false,
 					isSpinningLeft: false,
 					isSpinningRight: false,
-					isResting: true,
 					angle: roundedAngle
 				});
-			}, this.state.idleTimeout);
+				this.stopSimulation();
+			}, 1000);
 		}
 		
 	};
 	
 	stopSimulation() {
-		clearInterval(this.updateInterval);
+		if (this._simulationActive) {
+			this._simulationActive = false;
+			clearInterval(this.updateInterval);
+			this.emit('idle');
+			this.engine._stop();
+		}
 	};
 	
 	pushKnob() {
@@ -484,79 +379,70 @@ class VirtualSpin extends CollectionModel {
 		this.setState({
 			knobPushed: true
 		});
-		// this.emit('knob-pushed');
 		this.emit('knob', true);
 		
 	};
 	
 	releaseKnob() {
 		this.stop();
-		// if (!this.state.knobPushed) return;
-		// this.state.knobPushed = false;
 		this.setState({
 			knobPushed: false,
 			knobHoldToggle: false
 		});
-		// this.emit('knob-released');
 		this.emit('knob', false);
 	};
 	
 	pushButton() {
 		if (this.state.buttonHoldToggle) return;
 		if (this.state.buttonPushed) return;
-		// this.state.buttonPushed = true;
 		this.setState({
 			buttonPushed: true
 		});
-		// this.emit('button-pushed');
 		this.emit('button', true);
 	};
 	
 	releaseButton() {
-		// if (this.state.buttonHoldToggle)
-		// if (!this.state.buttonPushed) return;
-		// this.state.buttonPushed = false;
-		
 		this.setState({
 			buttonPushed: false,
 			buttonHoldToggle: false
 		});
-		// this.emit('button-released');
 		this.emit('button', false);
-	};
+	}
 	
 	toggleHoldKnob() {
 		console.log('toggleHoldKnob');
 		this.setState({knobHoldToggle: !this.state.knobHoldToggle});
 		if (this.state.knobHoldToggle) {
 			this.pushKnob();
-			// console.log('knob-release');
-			// this.emit('knob-release');
 		} else {
 			this.releaseKnob();
-			// console.log('knob-hold');
-			// this.emit('knob-hold');
 		}
-	};
+	}
 	
 	toggleHoldButton() {
 		console.log('toggleHoldButton');
 		this.setState({buttonHoldToggle: !this.state.buttonHoldToggle});
 		if (this.state.buttonHoldToggle) {
 			this.pushButton();
-			// console.log('button-hold');
-			// this.emit('button-hold');
 		} else {
 			this.releaseButton();
-			// console.log('button-release');
-			// this.emit('button-release');
 		}
-	};
+	}
+	
+	setEngine(engine) {
+		this.engine = engine;
+	}
+	startEngine() {
+		this.startSimulation();
+		
+		if (this.engine) this.engine._start();
+	}
 }
 
 VirtualSpin.engine = null;
 
-VirtualSpin.createWorldLogos = function (ctx, worldWidth, worldHeight, logos) {
+VirtualSpin.createWorldLogos = function (canvas, worldWidth, worldHeight, logoSize, logos) {
+	const ctx = canvas.getContext('2d');
 	let engine = Engine.create();
 	
 	engine.world.gravity.y = 0;
@@ -564,33 +450,19 @@ VirtualSpin.createWorldLogos = function (ctx, worldWidth, worldHeight, logos) {
 	engine.Vertices = Vertices;
 	engine.Bodies = Bodies;
 	
+	engine.logoSize = logoSize;
+	
+	engine._active = true;
+	
 	function render() {
-		
+		console.log('render');
 		Engine.update(engine, 16);
-		
-		
 		
 		var bodies = Composite.allBodies(engine.world);
 		
-		// ctx.clearRect(0, 0, canvas.width, canvas.height);
-		// ctx.beginPath();
-		// for (var i = 0; i < bodies.length; i += 1) {
-		// 	var vertices = bodies[i].vertices;
-		// 	ctx.moveTo(vertices[0].x, vertices[0].y);
-		// 	for (var j = 1; j < vertices.length; j += 1) {
-		// 		ctx.lineTo(vertices[j].x, vertices[j].y);
-		// 	}
-		// 	ctx.lineTo(vertices[0].x, vertices[0].y);
-		// }
-		//
-		// ctx.lineWidth = 1;
-		// ctx.strokeStyle = '#FFFFFF';
-		// ctx.stroke();
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		
-		ctx.fillStyle = '#000000';
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-		
-		let logoSize = 150;
+		let logoSize = engine.logoSize; //150;  //? ??????
 		
 		let body, img;
 		for (var i = 0; i < bodies.length; i += 1) {
@@ -598,13 +470,15 @@ VirtualSpin.createWorldLogos = function (ctx, worldWidth, worldHeight, logos) {
 			
 			ctx.save();
 			
-			// ctx.translate(-50, -50);
+			// ctx.translate(body.position.x, body.position.y);
+			ctx.translate(worldWidth/2, worldHeight/2);
 			
-			ctx.translate(body.position.x, body.position.y);
+			// ctx.scale(2, 1);
 			
 			ctx.rotate(body.angle);
 			
 			img = logos[i];
+			
 			ctx.drawImage(img, -logoSize/2, -logoSize/2, logoSize, logoSize);
 			
 			ctx.translate(0, 0);
@@ -612,48 +486,64 @@ VirtualSpin.createWorldLogos = function (ctx, worldWidth, worldHeight, logos) {
 			ctx.restore();
 			// ctx.fillStyle = '#FFFFFF';
 			// ctx.fillRect(body.position.x, body.position.y, 10, 10);
-			
 		}
 		
-		window.requestAnimationFrame(render);
+		if (engine._active) {
+			window.requestAnimationFrame(render);
+		}
 	}
 	
+	engine._start = function() {
+		if (!engine._active) {
+			engine._active = true;
+			render();
+		}
+	};
+	engine._stop = function() {
+		engine._active = false;
+	};
+	engine._render = render;
 	render();
 	
 	return engine;
 };
 
-VirtualSpin.createWorld = function (canvasRef, worldWidth, worldHeight) {
-	let engine = Engine.create();
+// VirtualSpin.createWorld = function (canvasRef, worldWidth, worldHeight) {
+	// let engine = Engine.create();
+	//
+	// engine.world.gravity.y = 0;
+	//
+	// engine.Vertices = Vertices;
+	// engine.Bodies = Bodies;
+	//
+	// let render = Render.create({
+	// 	element: canvasRef.getContext? canvasRef : canvasRef.current,
+	// 	engine: engine,
+	// 	options: {
+	// 		width: worldWidth,
+	// 		height: worldHeight,
+	// 		showVelocity: true,
+	// 		wireframes: false, // Draw the shapes as solid colors
+	// 		background: "#000"
+	// 	}
+	// });
+	//
+	// Render.run(render);
 	
-	engine.world.gravity.y = 0;
-	
-	engine.Vertices = Vertices;
-	engine.Bodies = Bodies;
-	
-	let render = Render.create({
-		element: canvasRef.current,
-		engine: engine,
-		options: {
-			width: worldWidth,
-			height: worldHeight,
-			showVelocity: true,
-			wireframes: false, // Draw the shapes as solid colors
-			background: "#000"
-		}
-	});
-	
-	Render.run(render);
-	
-	let runner = Runner.create();
-	Runner.run(runner, engine);
-	
-	Render.lookAt(render, {
-		min: {x: 0, y: 0},
-		max: {x: worldWidth, y: worldHeight}
-	});
-	
-	return engine;
-};
+	// let runner = Runner.create();
+	// Runner.run(runner, engine);
+	// setInterval(function() {
+		// Runner.tick(this.runner, this.engine, this.interval);
+	// },20);
+	//
+	// Render.lookAt(render, {
+	// 	min: {x: 0, y: 0},
+	// 	max: {x: worldWidth, y: worldHeight}
+	// });
+	//
+	// return engine;
+// };
+
+global.VirtualSpin = VirtualSpin;
 
 export default VirtualSpin;
