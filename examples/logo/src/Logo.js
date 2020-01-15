@@ -57,41 +57,9 @@ class Logo extends Component {
 			console.log('r', diff);
 			this.virtualspin.applyTorque(diff*0.42812);
 		});
-		// this.updateColors();
 	}
 	
-	// updateColors() {
-	// 	let startColor = new Color(255, 0, 0);
-	// 	let h, color, inverseColor;
-	//
-	// 	for (let s = 0; s < this.state.numberSpins; s++) {
-	// 		if (this.state.numberSpins === 1) {
-	// 			color = new Color(255, 255, 255);
-	// 			inverseColor = new Color(255, 0, 0);
-	// 		} else if (s === 0) {
-	// 			color = startColor;
-	// 			inverseColor = startColor.invert();
-	// 		} else {
-	// 			h = 1 / this.state.numberSpins;
-	// 			color = this.virtualspins[s - 1].color.shiftHue(h);
-	// 			inverseColor = color.invert();
-	// 		}
-	//
-	// 		this.virtualspins[s].color = color;
-	// 		this.virtualspins[s].inverseColor = inverseColor;
-	// 		this.virtualspins[s].setStrokeColor(color);
-	// 		this.logos[s] = this.createColoredLogo(this.logoSVG, color);
-	// 	}
-	// }
-	//
-	
 	createVirtualSpin() {
-		// let column = 0; //s < numColumns ? s : s % numColumns;
-		// let row = 0; //Math.floor(s / numColumns);
-		// let size = 200;
-		// let x = size * column + size / 2;
-		// let y = size * row + size / 2;
-		
 		let virtualspin = new VirtualSpin({
 			engine: this.engine,
 			canvasRef: this.canvasRef,
