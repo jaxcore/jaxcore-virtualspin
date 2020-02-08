@@ -4,7 +4,7 @@
   "description": "A virtual wheel/gear physics simulation for use with Jaxcore Spin",
   "main": "jaxcore-virtualspin.js",
   "dependencies": {
-    "jaxcore": "0.0.1",
+    "jaxcore": "0.0.2",
     "matter-js": "^0.14.2",
     "poly-decomp": "^0.3.0"
   },
