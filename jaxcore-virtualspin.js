@@ -31,6 +31,7 @@ class VirtualSpin extends Client {
 		this.Body = Body;
 		this.config = config;
 		
+		// if (config.engine) this.engine = config.engine;
 		this.engine = config.engine;
 		
 		this.defaultSize = config.bodySize;
@@ -38,10 +39,10 @@ class VirtualSpin extends Client {
 		this.worldWidth = config.width || 200;
 		this.worldHeight = config.height || 200;
 		this.worldSize = Math.min(this.worldWidth, this.worldHeight);
-		this.scale = this.worldSize / this.defaultSize;
-		this.x = this.scale * (config.x || 100);
-		this.y = this.scale * (config.y || 100);
-		this.size = this.scale * (this.defaultBodySize);
+		this.drawscale = this.worldSize / this.defaultSize;
+		this.x = this.drawscale * (config.x || 100);
+		this.y = this.drawscale * (config.y || 100);
+		this.size = this.drawscale * (this.defaultBodySize);
 		
 		this.color = config.color || 'white';
 		
@@ -73,7 +74,8 @@ class VirtualSpin extends Client {
 			torqueMax: (config.torqueMax || 100),
 			torqueInterval: (config.torqueMax || 20),
 			friction: (config.friction || 0.05),
-			updateInterval: (config.updateInterval || 10),
+			// updateInterval: (config.updateInterval || 10),
+			updateInterval: (config.updateInterval || 20),
 			idleTimeout: 1000
 		});
 		
@@ -135,81 +137,175 @@ class VirtualSpin extends Client {
 	
 	setShape(shape) {
 		this.knob = shape;
-		World.add(this.engine.world, [
-			this.knob
-		]);
+		// if (this.engine) {
+			World.add(this.engine.world, [
+				this.knob
+			]);
+		// }
 	}
 	
 	updateLeds() {
-		let color;
+		clearTimeout(this.ledTimeout);
+		this._updateLeds();
+		this.startLedTimer();
+	}
+	_updateLeds() {
+		console.log('_updateLeds');
 		if (this.ledRefs) {
 			this.ledRefs.forEach(function (ref, i) {
-				const r = this.ledColors[i][0];
-				const g = this.ledColors[i][1];
-				const b = this.ledColors[i][2];
-				color = 'rgb(' + r + ',' + g + ',' + b + ')';
-				if (ref.current) ref.current.style.backgroundColor = color;
+				let color;
+				let r, g, b;
+				if (!this.ledColors[i]) {
+					r = 0;
+					g = 0;
+					b = 0;
+				}
+				else {
+					r = this.ledColors[i][0];
+					g = this.ledColors[i][1];
+					b = this.ledColors[i][2];
+				}
+				
+				if (r === 0 && g === 0 && b === 0) color = 'transparent';
+				else color = 'rgb(' + r + ',' + g + ',' + b + ')';
+				
+				if (ref.current) {
+					ref.current.style.backgroundColor = color;
+				}
+				else {
+					console.log('no ref', i);
+					// debugger;
+				}
 			}, this);
+			this.emit('leds-changed', this.ledColors);
 		}
-		this.emit('leds-changed', this.ledColors);
 	}
 	
-	ledsOn(color) {
+	lightsOn(color) {
 		for (let i = 0; i < 24; i++) {
 			this.ledColors[i] = color;
 		}
+		// debugger;
 		this.ledsActive = true;
 		this.updateLeds();
 	};
 	
-	ledsOff() {
+	lightsOff() {
+		console.log('lightsOff');
 		let color = [0, 0, 0];
 		for (let i = 0; i < 24; i++) {
 			this.ledColors[i] = color;
 		}
+		this._updateLeds();
 		this.ledsActive = false;
-		this.updateLeds();
 	};
 	
-	flashColor(color) {
-		clearTimeout(this.ledTimeout);
-		this.ledsOn(color);
-		this.startLedTimer();
-	};
 	
 	startLedTimer() {
+		console.log('startLedTimer');
+		clearTimeout(this.ledTimeout);
 		let me = this;
 		this.ledTimeout = setTimeout(function () {
-			me.ledsOff();
+			console.log('startLedTimer timeout');
+			me.lightsOff();
 			me.ledsActive = false;
-		}, 2000);
+		}, 1100);
 	};
 	
-	rotateLeds(direction, color1, color2) {
-		clearTimeout(this.ledTimeout);
-		this.state.rotationIndex += direction;
-		if (this.state.rotationIndex > 23) this.state.rotationIndex = 0;
-		else if (this.state.rotationIndex < 0) this.state.rotationIndex = 23;
+	// led methods
+	
+	flash(color) {
 		
-		for (let i = 0; i < 24; i++) {
-			this.ledColors[i] = i === this.state.rotationIndex ? color1 : [0, 0, 0];
-		}
-		this.updateLeds();
+		this.lightsOn(color);
 		this.startLedTimer();
 	};
+	
+	rotate(diff, color1, color2) {
+		if (diff === 0) return;
+		
+		
+		let lit = [];
+		let x = 0;
+		let d = diff / Math.abs(diff);
+		while (x !== diff) {
+			x += d;
+			
+			let r = this.state.rotationIndex + x;
+			r = r % 24;
+			if (r<0) {
+				lit.push(24 + r);
+			}
+			else {
+				lit.push(r);
+			}
+		}
+		this.state.rotationIndex += diff;
+		for (let i = 0; i < 24; i++) {
+			this.ledColors[i] = [0,0,0];
+		}
+		for (let i = 0; i < 24; i++) {
+			// this.ledColors[i] = lit.indexOf(i) > -1? color1 : [0, 0, 0];
+			
+			if (lit.indexOf(i) > -1) {
+				this.ledColors[i] = color1;
+				if (color2) {
+					let x = i + 12;
+					// if (x < 0) x += 23;
+					if (x > 23) x -= 23;
+					this.ledColors[x] = color2;
+				}
+				break;
+			}
+		}
+		// debugger;
+		this.updateLeds();
+		
+	}
+	
+	scale(index, color1, color2, color3) {
+		// if (percent >= 0 && percent <= 1) {
+		// 	let index = Math.floor(percent * 24);s
+		for (let i = 0; i < 24; i++) {
+			if (i === index) {
+				this.ledColors[i] = color3;
+			}
+			else if (i > index) {
+				this.ledColors[i] = [0,0,0];
+			}
+			else {
+				let r = color1[0];
+				let g = color1[1];
+				let b = color1[2];
+				let r2 = color2[0];
+				let g2 = color2[1];
+				let b2 = color2[2];
+				r += i * (r2 - r) / 24;
+				g += i * (g2 - g) / 24;
+				b += i * (b2 - b) / 24;
+				this.ledColors[i] = [r,g,b];
+			}
+		}
+		this.updateLeds();
+			// this.startLedTimer();
+		// }
+	}
+	balance() {
+		
+	}
 	
 	setAngularVelocity(avelocity) {
 		Body.setAngularVelocity(this.knob, avelocity);
 	};
 	
-	rotate(angle) {
+	rotateKnob(angle) {
 		this.startEngine();
 		Body.rotate(this.knob, angle);
 	};
 	
 	applyTorque(torque) {
 		this.startEngine();
-		this.setTorque(this.knob.torque + torque * this.scale);
+		let t = this.knob.torque + torque * this.drawscale;
+		this.setTorque(t);
 	};
 	
 	setTorque(torque) {
@@ -237,11 +333,24 @@ class VirtualSpin extends Client {
 		this.applyTorque(this.state.torqueMax);
 	};
 	
+	toggleSpinLeft() {
+		if (this.isSpinningLeft) this.stopSpinLeft();
+		else this.startSpinLeft();
+	}
 	startSpinLeft() {
+		console.log('startSpinLeft');
+		if (this.isSpinningLeft) {
+			console.log('isSpinningLeft');
+			return;
+		}
+		console.log('stop');
 		this.stop();
 		this.state.leftTorqueAccel = this.state.torqueStart;
+		this.isSpinningLeft = true;
 		clearTimeout(this.spinLeftTimer);
 		let me = this;
+		console.log('startSimulation');
+		this.startSimulation();
 		this.spinLeftTimer = startInterval(function () {
 			me.state.leftTorqueAccel += me.state.torqueAccel;
 			me.applyTorque(-me.state.leftTorqueAccel);
@@ -249,14 +358,26 @@ class VirtualSpin extends Client {
 	};
 	
 	stopSpinLeft() {
+		this.isSpinningLeft = false;
 		clearTimeout(this.spinLeftTimer);
 	};
 	
+	toggleSpinRight() {
+		if (this.isSpinningLeft) this.stopSpinRight();
+		else this.startSpinRight();
+	}
 	startSpinRight() {
+		console.log('startSpinRight');
+		if (this.isSpinningRight) {
+			console.log('isSpinningRight');
+			return;
+		}
 		this.stop();
 		this.state.rightTorqueAccel = this.state.torqueStart;
+		this.isSpinningRight = true;
 		clearTimeout(this.spinRightTimer);
 		let me = this;
+		this.startSimulation();
 		this.spinRightTimer = startInterval(function () {
 			me.state.rightTorqueAccel += me.state.torqueAccel;
 			me.applyTorque(me.state.rightTorqueAccel);
@@ -264,6 +385,7 @@ class VirtualSpin extends Client {
 	};
 	
 	stopSpinRight() {
+		this.isSpinningRight = false;
 		clearTimeout(this.spinRightTimer);
 	};
 	
@@ -275,6 +397,7 @@ class VirtualSpin extends Client {
 		console.log('setPosition', position);
 		let angle = (position / 32) * (Math.PI * 2);
 		Body.rotate(this.knob, angle - this.knob.angle);
+		this.update();
 	};
 	
 	rotateLeft() {
@@ -320,13 +443,19 @@ class VirtualSpin extends Client {
 	}
 	
 	update() {
+		// console.log('update');
 		let position = this.getPosition();
 		
 		// round angle down to 4 decimal places because in matterjs it never actually reaches 0.0
 		let roundedAngle = Math.round(this.knob.angle * 100) / 100;
 		
+		// console.log('update', position, this.knob.angle);
+		
 		let roundedAngularVelocity = Math.round(this.knob.angularVelocity * 1000) / 1000;
+		
 		if (this.state.angle !== roundedAngle) {
+			// console.log('angle', this.state.angle, roundedAngle);
+			
 			clearTimeout(this.idleTimer);
 			
 			let changes = {
@@ -339,15 +468,21 @@ class VirtualSpin extends Client {
 			};
 			
 			if (this.state.spinPosition !== position) {
+				// console.log('position CHANGED', position)
+				
 				let direction = position - this.state.spinPosition > 0 ? 1 : -1;
 				changes.spinPosition = position;
 				changes.spinDirection = direction;
 				this.emit('spin', direction, position);
 			}
+			else {
+				// console.log('position UNCHANGED', position)
+			}
 			
 			this.setState(changes);
 			
-			//this.emit('rotate', this.state.angle, this);
+			// console.log('rotate', this.state.angle);
+			this.emit('rotate', this.state.angle, this);
 			
 			this.idleTimer = setTimeout(() => {
 				this.setState({
@@ -357,21 +492,29 @@ class VirtualSpin extends Client {
 					isSpinningRight: false,
 					angle: roundedAngle
 				});
+				console.log('stopping Simulation');
 				this.stopSimulation();
 			}, 1000);
 		}
-		
+		else {
+			// console.log('angle is the same', this.knob.angle, roundedAngle)
+		}
 	};
 	
 	stopSimulation() {
 		if (this._simulationActive) {
+			console.log('stopSimulation');
 			this._simulationActive = false;
 			clearInterval(this.updateInterval);
 			this.emit('idle');
-			this.engine._stop();
+			if (this.engine) this.engine._stop();
 		}
 	};
 	
+	toggleKnob() {
+		if (this.state.knobPushed) this.releaseKnob();
+		else this.pushKnob();
+	}
 	pushKnob() {
 		if (this.state.knobHoldToggle) return;
 		if (this.state.knobPushed) return;
@@ -379,6 +522,7 @@ class VirtualSpin extends Client {
 		this.setState({
 			knobPushed: true
 		});
+		console.log('emit knob', true);
 		this.emit('knob', true);
 		
 	};
@@ -389,15 +533,21 @@ class VirtualSpin extends Client {
 			knobPushed: false,
 			knobHoldToggle: false
 		});
+		console.log('emit knob', false);
 		this.emit('knob', false);
 	};
 	
+	toggleButton() {
+		if (this.state.knobPushed) this.releaseButton();
+		else this.pushButton();
+	}
 	pushButton() {
 		if (this.state.buttonHoldToggle) return;
 		if (this.state.buttonPushed) return;
 		this.setState({
 			buttonPushed: true
 		});
+		console.log('emit button', true);
 		this.emit('button', true);
 	};
 	
@@ -406,6 +556,7 @@ class VirtualSpin extends Client {
 			buttonPushed: false,
 			buttonHoldToggle: false
 		});
+		console.log('emit button', false);
 		this.emit('button', false);
 	}
 	
@@ -433,16 +584,19 @@ class VirtualSpin extends Client {
 		this.engine = engine;
 	}
 	startEngine() {
+		
 		this.startSimulation();
 		
-		if (this.engine) this.engine._start();
+		if (this.engine) {
+			this.engine._start();
+		}
 	}
 }
 
 VirtualSpin.engine = null;
 
 VirtualSpin.createWorldLogos = function (canvas, worldWidth, worldHeight, logoSize, logos) {
-	const ctx = canvas.getContext('2d');
+	
 	let engine = Engine.create();
 	
 	engine.world.gravity.y = 0;
@@ -454,10 +608,20 @@ VirtualSpin.createWorldLogos = function (canvas, worldWidth, worldHeight, logoSi
 	
 	engine._active = true;
 	
+	
 	function render() {
-		console.log('render');
 		Engine.update(engine, 16);
 		
+		if (!canvas) {
+			if (engine._active) {
+				// if (canvas) {
+				window.requestAnimationFrame(render);
+				// }
+			}
+			return;
+		}
+		
+		const ctx = canvas.getContext('2d');
 		var bodies = Composite.allBodies(engine.world);
 		
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -465,48 +629,109 @@ VirtualSpin.createWorldLogos = function (canvas, worldWidth, worldHeight, logoSi
 		let logoSize = engine.logoSize; //150;  //? ??????
 		
 		let body, img;
-		for (var i = 0; i < bodies.length; i += 1) {
-			body = bodies[i];
-			
-			ctx.save();
-			
-			// ctx.translate(body.position.x, body.position.y);
-			ctx.translate(worldWidth/2, worldHeight/2);
-			
-			// ctx.scale(2, 1);
-			
-			ctx.rotate(body.angle);
-			
-			img = logos[i];
-			
-			ctx.drawImage(img, -logoSize/2, -logoSize/2, logoSize, logoSize);
-			
-			ctx.translate(0, 0);
-			
-			ctx.restore();
-			// ctx.fillStyle = '#FFFFFF';
-			// ctx.fillRect(body.position.x, body.position.y, 10, 10);
+		
+		if (logos) {
+			for (var i = 0; i < bodies.length; i += 1) {
+				body = bodies[i];
+				
+				ctx.save();
+				
+				// ctx.translate(body.position.x, body.position.y);
+				ctx.translate(worldWidth / 2, worldHeight / 2);
+				
+				// ctx.scale(2, 1);
+				
+				ctx.rotate(body.angle);
+				
+				img = logos[i];
+				
+				ctx.drawImage(img, -logoSize / 2, -logoSize / 2, logoSize, logoSize);
+				
+				
+				ctx.translate(0, 0);
+				
+				ctx.restore();
+				// ctx.fillStyle = '#FFFFFF';
+				// ctx.fillRect(body.position.x, body.position.y, 10, 10);
+			}
 		}
 		
 		if (engine._active) {
-			window.requestAnimationFrame(render);
+			// if (canvas) {
+				window.requestAnimationFrame(render);
+			// }
+		}
+		else {
+			
+			console.log('engine._active', engine._active);
 		}
 	}
 	
+	let renderInterval;
+	
 	engine._start = function() {
 		if (!engine._active) {
+			console.log('ENGINE ACTIVE');
 			engine._active = true;
-			render();
+			
+			// if (!canvas) {
+			// 	renderInterval = setInterval(render, 20);
+			// }
+			// else
+				render();
+			
 		}
 	};
 	engine._stop = function() {
+		console.log('ENGINE INACTIVE');
 		engine._active = false;
+		clearInterval(renderInterval);
 	};
 	engine._render = render;
+	
 	render();
+	// engine._start();
 	
 	return engine;
 };
+
+//
+// VirtualSpin.createWorld = function (worldWidth, worldHeight, logoSize) {
+// 	let engine = Engine.create();
+//
+// 	engine.world.gravity.y = 0;
+//
+// 	engine.Vertices = Vertices;
+// 	engine.Bodies = Bodies;
+//
+// 	let render = Render.create({
+// 		// element: canvasRef.getContext? canvasRef : canvasRef.current,
+// 		engine: engine,
+// 		options: {
+// 			width: worldWidth,
+// 			height: worldHeight,
+// 			showVelocity: true,
+// 			wireframes: false, // Draw the shapes as solid colors
+// 			background: "#000"
+// 		}
+// 	});
+//
+// 	Render.run(render);
+//
+// 	let runner = Runner.create();
+// 	Runner.run(runner, engine);
+//
+// 	setInterval(function() {
+// 		Runner.tick(runner, engine);
+// 	},20);
+//
+// 	Render.lookAt(render, {
+// 		min: {x: 0, y: 0},
+// 		max: {x: worldWidth, y: worldHeight}
+// 	});
+//
+// 	return engine;
+// };
 
 // VirtualSpin.createWorld = function (canvasRef, worldWidth, worldHeight) {
 	// let engine = Engine.create();
